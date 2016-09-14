@@ -44,6 +44,10 @@ import java.awt.image.RenderedImage;
 import java.awt.image.WritableRaster;
 import java.io.IOException;
 
+import org.apache.commons.math3.analysis.UnivariateFunction;
+import org.apache.commons.math3.analysis.solvers.BrentSolver;
+import org.apache.commons.math3.analysis.solvers.IllinoisSolver;
+import org.apache.commons.math3.analysis.solvers.NewtonRaphsonSolver;
 import org.apache.commons.math3.ode.*;
 
 
@@ -101,21 +105,6 @@ public class WaterBudget extends JGTModel{
 
 
 
-	@Description("Parameter of the non-linear Reservoir model "
-			+ "for the considered layer")
-	@In
-	public static double a ;
-
-
-	@Description("Parameter of non-linear reservoir, for the upper layer")
-	@In
-	public static double c;
-
-
-	@Description("Pore volume in the root zone")
-	@In
-	public static double nZ;
-
 	@Description("partitioning coefficient between the reserovir")
 	@Unit("-")
 	@In
@@ -128,52 +117,14 @@ public class WaterBudget extends JGTModel{
 	@Unit("-")
 	public Double pB;
 
-	@Description("Maximum value of the water storage, needed for the"
-			+ "computation of the Actual EvapoTraspiration")
-	@In
-	public static double s_max;
-
-
-	@Description("Maximum recharge rate of the lower layer")
-	@In
-	public static double Re;
-
-
-	@Description("Discharge model: NonLinearReservoir, Clapp-H")
-	@In
-	public String Q_model;
-
-	@Description("ET model: AET,ExternalValues, nullET")
-	@In
-	public String ET_model;
-
-	@Description("ODE solver ")
-	@In
-	public String solver_model;
-
 	@Description("Simluted value of AET"
 			+ "at a given time step")
 	double AET;
-
-	DischargeModel Qmodel;
-	ETModel ETmodel;
-
-	@Description("Rescaled distance map")
-	@In
-	public GridCoverage2D inRescaledsup = null;
-
-	@Description("Channel celerity")
-	@Unit("m/s")
-	@In
-	public double pCelerity;
 
 	@Description("The output HashMap with the Water Storage  ")
 	@Out
 	public HashMap<Integer, double[]> outHMStorage= new HashMap<Integer, double[]>() ;
 
-	@Description("The output HashMap with the discharge ")
-	@Out
-	public HashMap<Integer, double[]> outHMDischarge= new HashMap<Integer, double[]>() ;
 
 	@Description("The output HashMap with the AET ")
 	@Out
@@ -185,8 +136,14 @@ public class WaterBudget extends JGTModel{
 	@Out
 	public HashMap<Integer, double[]> outHMR= new HashMap<Integer, double[]>() ;
 
-	double S_i;
+	double eta_i;
 	int step;
+	
+	public double zeta;
+	public double zeta_rz;
+	public double psiB;
+	public double beta;
+	public double theta_s;
 
 
 
@@ -223,20 +180,59 @@ public class WaterBudget extends JGTModel{
 		if (inETvalues != null) ET = inETvalues.get(ID)[0];
 		if (isNovalue(ET)) ET= 0;
 
-		double alpha=alpha(S_i,totalInputFluxes);
-		double waterStorage=computeS((1-alpha)*totalInputFluxes);
-		double discharge=computeQ(waterStorage);
-		double evapotranspiration=computeAET(S_i);
-		double drainage=computeR(discharge);
+		double S_max=theta_s*(zeta-zeta_rz);
+		
+		double storage_rz=computeS(eta_i);
+		
+		double alpha=alpha(storage_rz,totalInputFluxes,S_max);
+	
+		double evapotranspiration=computeAET(storage_rz,S_max);
+		
+		double eta_rz=computeEta((1-alpha)*totalInputFluxes,eta_i,evapotranspiration,S_max);
+		
+		double discharge=computeQ(eta_rz);
+		
+		
 
 
 		/** Save the result in  hashmaps for each station*/
-		storeResult_series(ID,waterStorage,discharge,evapotranspiration,drainage);
+		storeResult_series(ID,eta_rz,discharge,evapotranspiration);
 
-
+		eta_i=eta_rz;
 		step++;
 
 	}
+
+	private double computeS(double eta_i) {
+		double S_g=((zeta-eta_i)>psiB)?Math.pow(psiB/(zeta-eta_i),beta):1;
+		double S_rz=((zeta_rz-eta_i)>psiB)?Math.pow(psiB/(zeta_rz-eta_i),beta):1;
+		return S_g-S_rz;
+	}
+	
+	private double alpha( double S_rz, double Pval, double S_max) {
+		double pCmax=S_max *(pB+1);
+		double coeff1 = ((1.0 - ((pB + 1.0) * (S_rz) / pCmax)));
+		double exp = 1.0 / (pB + 1.0);
+		double ct_prev = pCmax * (1.0 - pow(coeff1, exp));
+		double UT1 = max((Pval - pCmax + ct_prev), 0.0);     
+		return alpha=UT1/Pval;
+	}
+	
+	
+	/**
+	 * Compute the AET
+	 *
+	 * @param ETinput: the input potential ET
+	 * @return the double value od the AET
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	private double computeAET(double S_rz, double S_max) throws IOException {
+		AET=(S_rz*ET/S_max);
+		return AET;
+	}
+
+
+
 
 	/**
 	 * Compute the water storage
@@ -247,37 +243,16 @@ public class WaterBudget extends JGTModel{
 	 * @return the water storage, according to the model and the layer
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public double computeS(double totalInputFluxes) throws IOException {
+	public double computeEta(double totalInputFluxes, double eta, double evapotranspiration,double S_max) throws IOException {
 		/**integration time*/
 		dt=1E-4;
 
-		/** SimpleFactory for the computation of Q, according to the model*/
-		Qmodel=SimpleDischargeModelFactory.createModel(Q_model, a, S_i, c);
-		double Qmod=Qmodel.dischargeValues();
+		
+		UnivariateFunction univariateFunction = new equation(zeta, zeta_rz,eta, psiB, beta,totalInputFluxes, dt,evapotranspiration);
+		BrentSolver brentSolver = new BrentSolver();
 
-		/** SimpleFactory for the computation of ET, according to the model*/
-		ETmodel=SimpleETModelFactory.createModel(ET_model,ET,S_i,s_max);
-		double ETmod=ETmodel.ETValues();
-
-		/** Creation of the differential equation*/
-		FirstOrderDifferentialEquations ode=new waterBudgetODE(nZ,totalInputFluxes,Qmod, ETmod);			
-
-		/** Boundaries conditions*/
-		double[] y = new double[] { S_i, 0 };
-
-		/** Choice of the ODE solver */	
-		SolverODE solver;
-		solver=SimpleIntegratorFactory.createSolver(solver_model, dt, ode, y);
-
-		/** result of the resolution of the ODE, if nZ=1, S_i=S_t
-		 * and setting of the new initial condition (S_i)*/
-		S_i=solver.integrateValues();
-		double S_t=S_i*nZ;
-
-		/** Check of the Storage values: they cannot be negative*/
-		if (S_t<0) S_t=0;
-
-		return S_t;
+		double eta_rz=brentSolver.solve(1000, univariateFunction,-1,S_max);
+		return eta_rz;
 	}
 
 	/**
@@ -289,47 +264,13 @@ public class WaterBudget extends JGTModel{
 	 * @return the double value of the simulated discharge
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public double computeQ( double S_i) throws IOException {
-		Qmodel=SimpleDischargeModelFactory.createModel(Q_model, a, S_i, c);
-		double Q=Qmodel.dischargeValues();
+	public double computeQ( double eta_rz) throws IOException {
+		double Q=eta_rz-eta_i+(Math.pow(psiB/(zeta_rz-eta_rz),beta)-Math.pow(psiB/(zeta_rz-eta_i),beta))/dt;		
 		return Q;
 	}
 
 
-	/**
-	 * Compute the outflow toward the lower layer
-	 *
-	 * @param Q: simulated discharge for the considered layer
-	 * @return the double value of the outflow toward the lower layer
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 */
-	public double computeR(double Q) throws IOException {
-		double R=Math.min(Q, Re);
-		return R;
-	}
 
-	/**
-	 * Compute the AET
-	 *
-	 * @param ETinput: the input potential ET
-	 * @return the double value od the AET
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 */
-	public double computeAET(double S_i) throws IOException {
-		ETmodel=SimpleETModelFactory.createModel(ET_model,ET,S_i,s_max);
-		AET=ETmodel.ETValues();
-		return AET;
-	}
-
-
-	private double alpha( double S_i_prev, double Pval) {
-		double pCmax=s_max *(pB+1);
-		double coeff1 = ((1.0 - ((pB + 1.0) * (S_i_prev) / pCmax)));
-		double exp = 1.0 / (pB + 1.0);
-		double ct_prev = pCmax * (1.0 - pow(coeff1, exp));
-		double UT1 = max((Pval - pCmax + ct_prev), 0.0);     
-		return alpha=UT1/Pval;
-	}
 
 
 	/**
@@ -344,12 +285,11 @@ public class WaterBudget extends JGTModel{
 	 */
 
 	private void storeResult_series(int ID, double waterStorage,double discharge,
-			double evapotranspiration,double drainage) throws SchemaException {
+			double evapotranspiration) throws SchemaException {
 
 		outHMStorage.put(ID, new double[]{waterStorage});
-		outHMDischarge.put(ID, new double[]{discharge});
 		outHMEvapotranspiration.put(ID, new double[]{evapotranspiration});
-		outHMR.put(ID, new double[]{drainage});
+		outHMR.put(ID, new double[]{discharge});
 
 	}
 

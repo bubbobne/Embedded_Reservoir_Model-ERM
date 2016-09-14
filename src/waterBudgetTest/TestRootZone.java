@@ -65,16 +65,14 @@ public class TestRootZone extends HMTestCase{
 
 		while( JReader.doProcess ) {
 		
-			waterBudget.solver_model="dp853";
-			waterBudget.Q_model="NonLinearReservoir";
-			waterBudget.ET_model="AET";
-			waterBudget.a=752.3543670;
-			waterBudget.c=1.75744;
-			waterBudget.s_max=0.005704;
-			waterBudget.Re=0.2;
-			waterBudget.nZ=1;
 			waterBudget.ID=209;
 			waterBudget.pB=4.5;
+			waterBudget.zeta=3;
+			waterBudget.zeta_rz=0.5;
+			waterBudget.psiB=0.1;
+			waterBudget.beta=2;
+			waterBudget.theta_s=100;
+			
 			
 			JReader.nextRecord();
 			
@@ -91,7 +89,6 @@ public class TestRootZone extends HMTestCase{
             waterBudget.process();
             
             HashMap<Integer, double[]> outHMStorage = waterBudget.outHMStorage;
-            HashMap<Integer, double[]> outHMDischarge = waterBudget.outHMDischarge;
             HashMap<Integer, double[]> outHMET = waterBudget.outHMEvapotranspiration;
             HashMap<Integer, double[]> outHMR = waterBudget.outHMR;
             
@@ -102,12 +99,7 @@ public class TestRootZone extends HMTestCase{
 				writerS.close();
 			}
 			
-			writerQ.inData = outHMDischarge;
-			writerQ.writeNextLine();
-			
-			if (pathToQ != null) {
-				writerQ.close();
-			}
+
 			
 			writerET.inData = outHMET;
 			writerET.writeNextLine();
