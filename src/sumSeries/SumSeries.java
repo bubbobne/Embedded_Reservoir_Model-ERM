@@ -45,11 +45,11 @@ public class SumSeries extends JGTModel{
 
 	@Description("Input first discharge Hashmap")
 	@In
-	public HashMap<Integer, double[]> inQ;
+	public HashMap<Integer, double[]> inHMDischarge;
 
 	@Description("Input second discharge Hashmap")
 	@In
-	public HashMap<Integer, double[]> inQ2;
+	public HashMap<Integer, double[]> inHMDischarge2;
 
 
 	@Description("ID")
@@ -71,12 +71,12 @@ public class SumSeries extends JGTModel{
 	@Execute
 	public void process() throws Exception {
 
-		checkNull(inQ);
+		checkNull(inHMDischarge);
 
-		double Q1 =inQ.get(ID)[0];
+		double Q1 =inHMDischarge.get(ID)[0];
 		if (isNovalue(Q1)) Q1= 0;
 
-		double Q2 =inQ2.get(ID)[0];
+		double Q2 =inHMDischarge2.get(ID)[0];
 		if (isNovalue(Q2)) Q2= 0;
 
 		/** sum of the given quantities */

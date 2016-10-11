@@ -29,16 +29,12 @@ import oms3.annotations.Description;
 import oms3.annotations.Execute;
 import oms3.annotations.In;
 import oms3.annotations.Out;
-import oms3.annotations.Unit;
 
-import org.geotools.coverage.grid.GridCoverage2D;
+
 import org.geotools.feature.SchemaException;
 import org.jgrasstools.gears.libs.modules.JGTModel;
-import org.jgrasstools.gears.utils.coverage.CoverageUtilities;
-import org.jgrasstools.hortonmachine.modules.statistics.cb.OmsCb;
 
-import java.awt.image.RenderedImage;
-import java.awt.image.WritableRaster;
+
 import java.io.IOException;
 
 import org.apache.commons.math3.ode.*;
@@ -74,14 +70,6 @@ public class WaterBudget extends JGTModel{
 	@Description("Input ET Hashmap")
 	@In
 	public HashMap<Integer, double[]> inETvalues;
-
-	@Description("Input Discharge Hashmap: first contribution from other HRUs")
-	@In
-	public HashMap<Integer, double[]> inDischargevalues1;
-	
-	@Description("Input Discharge Hashmap: second contribution from other HRUs")
-	@In
-	public HashMap<Integer, double[]> inDischargevalues2;
 
 
 	@Description("time step of the simulation")
@@ -144,14 +132,6 @@ public class WaterBudget extends JGTModel{
 	DischargeModel model;
 	ETModel ETmodel;
 
-	@Description("Rescaled distance map")
-	@In
-    public GridCoverage2D inRescaledsup = null;
-	
-    @Description("Channel celerity")
-    @Unit("m/s")
-    @In
-    public double pCelerity;
 	
 	@Description("The output HashMap with the Water Storage  ")
 	@Out
@@ -214,16 +194,9 @@ public class WaterBudget extends JGTModel{
 			if (inSnowValues != null) snow=inSnowValues.get(ID)[0];
 			if (isNovalue(snow)) snow= 0;
 
-			double Qinput1=0;
-			if (inDischargevalues1 != null) Qinput1 =inDischargevalues1.get(ID)[0];
-			if (isNovalue(Qinput1)) Qinput1= 0;
+
 			
-			double Qinput2=0;
-			if (inDischargevalues2 != null) Qinput2 =inDischargevalues2.get(ID)[0];
-			if (isNovalue(Qinput2)) Qinput2= 0;
-			
-			
-			double totalInputFluxes=rain+snow+Qinput1+Qinput2;
+			double totalInputFluxes=rain+snow;
 
 			ET=0;
 			if (inETvalues != null) ET = inETvalues.get(ID)[0];
