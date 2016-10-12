@@ -68,7 +68,7 @@ public class SumSeries extends JGTModel{
 	@Execute
 	public void process() throws Exception {
 
-		checkNull(inHMDischarge);
+		//checkNull(inHMDischarge);
 
 		Set<Entry<Integer, double[]>> entrySet = inHMDischarge.entrySet();
 
