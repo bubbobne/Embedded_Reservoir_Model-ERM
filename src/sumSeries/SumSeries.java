@@ -22,7 +22,8 @@ package sumSeries;
 import static org.jgrasstools.gears.libs.modules.JGTConstants.isNovalue;
 
 import java.util.HashMap;
-
+import java.util.Set;
+import java.util.Map.Entry;
 
 import oms3.annotations.Description;
 import oms3.annotations.Execute;
@@ -52,10 +53,6 @@ public class SumSeries extends JGTModel{
 	public HashMap<Integer, double[]> inHMDischarge2;
 
 
-	@Description("ID")
-	@In
-	public int ID ;
-
 	@Description("The output HashMap with the sum"
 			+ "for the considered layer ")
 	@Out
@@ -73,17 +70,30 @@ public class SumSeries extends JGTModel{
 
 		checkNull(inHMDischarge);
 
-		double Q1 =inHMDischarge.get(ID)[0];
-		if (isNovalue(Q1)) Q1= 0;
+		Set<Entry<Integer, double[]>> entrySet = inHMDischarge.entrySet();
 
-		double Q2 =inHMDischarge2.get(ID)[0];
-		if (isNovalue(Q2)) Q2= 0;
+		Set<Entry<Integer, double[]>> entrySet2 = inHMDischarge2.entrySet();
 
-		/** sum of the given quantities */
-		double sum=sum(Q1,Q2);
 
-		/** Save the result in hashmap output */
-		storeResult_series(ID,sum);
+		for (Entry<Integer, double[]> entry : entrySet){
+			for (Entry<Integer, double[]> entry2 : entrySet2){
+
+				Integer ID = entry.getKey();
+				Integer ID2 = entry2.getKey();
+
+				double Q1 =inHMDischarge.get(ID)[0];
+				if (isNovalue(Q1)) Q1= 0;
+
+				double Q2 =inHMDischarge2.get(ID2)[0];
+				if (isNovalue(Q2)) Q2= 0;
+
+				/** sum of the given quantities */
+				double sum=sum(Q1,Q2);
+
+				/** Save the result in hashmap output */
+				storeResult_series(ID,sum);
+			}
+		}
 
 	}
 
