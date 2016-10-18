@@ -1,24 +1,24 @@
 language: java
 jdk:
-    - oraclejdk8
+- oraclejdk8
 before_cache:
-    - rm -f $HOME/.gradle/caches/modules-2/modules-2.lock
-    - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+- rm -f $HOME/.gradle/caches/modules-2/modules-2.lock
+- rm -fr $HOME/.gradle/caches/*/plugin-resolution/
 cache:
   directories:
-      - "$HOME/.gradle/caches/"
-      - "$HOME/.gradle/wrapper/"
+  - "$HOME/.gradle/caches/"
+  - "$HOME/.gradle/wrapper/"
 before_deploy:
-    - export GRADLE_BUILD_DIR="build/libs"
-    - export TAG=$(git describe --abbrev=0 --tags)
-    - export MOD_TAG=${TAG#"v"}
-    - export RELEASE_PKG_FILE="${GRADLE_BUILD_DIR}/WATER_BUDGET-${MOD_TAG}.jar"
-    - echo "deploying $RELEASE_PKG_FILE to GitHub releases"
-    - gradle -PprojVersion=$MOD_TAG build
+- export GRADLE_BUILD_DIR="build/libs"
+- export TAG=$(git describe --abbrev=0 --tags)
+- export MOD_TAG=${TAG#"v"}
+- export RELEASE_PKG_FILE="${GRADLE_BUILD_DIR}/WATER_BUDGET-${MOD_TAG}.jar"
+- echo "deploying $RELEASE_PKG_FILE to GitHub releases"
+- gradle -PprojVersion=$MOD_TAG build
 deploy:
   provider: releases
   api_key:
-    secure: ovDxve/tT2163lPWf2qhxVtIZjR+8H8KaZV0boxQKrrjMTDlp6I6bpXDTVQZq12LQRtKTs9vNRd4nlNm6Wp+Wta6qtZi981P6EuqEDFsMRK9+eppkjQTnPSrRf0fYYL81QgAXBNaIYSJWLJ+k7Ou28Ikyb+/3QWFifkFTbo+LgU6MVE5lUJCsMOn0q2cPiWacvvgL51O6ZkEz5IAB5XxWFxCQdvdn6ExZxBOM3OiA8dGKRruNtXpI3qgREz219qrUJZhDxA2ATlWGKnobIK8b0/flhT7Xm84RVRWWabYB9zNhSO06o/BJsXvVTmt/+f3hITN3Ga/A0DG5IvZ9eOOPA0EpR2s/XLmenNCHLqHxzkMJd6AueA0VQVXPDE87sL7lsnvwaFHFiBZ91/K1zUZZRnIoy46351rlsvj/7J6+ge+tpm1FwFdycDjgOApkBavGmaZxtL3Y/nJ4QFW8ioVWA/eTZ4EfPFBFZJTsrO4N1+1Kt9MZeFpFcgNgHz8/lgcZtL/yIdCM08OnQkn/SxdjklIBpLjGeoeAzPTjsROfCw56b94RbFLdZpD1qH7zEGTcNiWqrYOuCYZL9XU0fFtvvG4vy9LmRR+orlnVqB1tdPE4V50Kvk4WxfSvUhvJ9FS1tQmIByBiKICIKYD2YLyXWcYMms2l7vfUxcLvtglUk8=
+    secure: oN5/WCKAUzrFahQq6QmJmxEqrzz5cj1mRnBb9qcfv9kpNnv2TahwkXZKIqyBSqzDL+K9vOFw71h2Mtn06T8zoj35MOtwGHhHIe3bAtgGZjs2svTNjARAdBHFvEeFq6nxx4nGvnSvW8Di32TEpStMdiN3gErnJCR7qptFArc6JJO6XlvZilq6SI3yo9vU3Wq6q6c0vSA2ayI2XTL7BVaRLwzcHkoPrwztoWjgtFpuZ1ZVluTftvSppqQLYCrAbNnnTdEMNFXa+JezVKEcD0uezzJQnTjjjC2Tk/REjdI3adMr69n1i1rQjWinFJOvCxhLJrc5a/kmln1SiOc4ul0P9FuTHaCpraFLoXelXDiwLTeg+J1dQdXqzVCNfhXsFSnyZ4G+m6nH+0aWqCA+891apPdB4Z8PBASvNOk0GBNYuGMgvD/za9zymP6E2E/kKPJcm29165upFV4Gu2ME4hhnDZv/fD590n1SvV4TEWuXeK96F/Tw8ohD9v6GxYjWiCE9329v4Q2jQlUDqZKpIg4ahpIg33b3iV9BMd+Jshq4gGOD6CbBY4JIEqUexf463DvVWRXXsH5wV1rb3fXnhbI/cEO0hdwHX2wicY7Gfv2JKWvbzorWEx+lcbOmGH+xrAcEGWFjQVFrQQv2s4Nayf330/5E6zOF2yZLkJ9oDcQLGSk=
   file: "${RELEASE_PKG_FILE}"
   skip_cleanup: true
   on:
