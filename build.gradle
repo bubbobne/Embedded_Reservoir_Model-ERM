@@ -21,6 +21,7 @@ jar {
     }
 }
 
+// no local repositories
 repositories {
 
     maven {
