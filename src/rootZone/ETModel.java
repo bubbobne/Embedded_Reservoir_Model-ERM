@@ -2,6 +2,6 @@ package rootZone;
 
 public interface ETModel {
 	
-	abstract public double ETValues ();
+	abstract public double ETcoefficient ();
 
 }

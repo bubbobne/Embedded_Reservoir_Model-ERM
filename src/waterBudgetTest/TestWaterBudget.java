@@ -7,12 +7,14 @@ import java.util.HashMap;
 import org.jgrasstools.gears.io.timedependent.OmsTimeSeriesIteratorReader;
 import org.jgrasstools.gears.io.timedependent.OmsTimeSeriesIteratorWriter;
 import org.jgrasstools.gears.libs.monitor.PrintStreamProgressMonitor;
-import org.jgrasstools.hortonmachine.utils.HMTestCase;
+import org.junit.Test;
+
 
 import waterBudget.WaterBudget;
 
-public class TestWaterBudget extends HMTestCase{
+public class TestWaterBudget{
 
+	@Test
 	public void testLinear() throws Exception {
 
 		String startDate = "1994-01-01 00:00";
@@ -23,7 +25,6 @@ public class TestWaterBudget extends HMTestCase{
 		PrintStreamProgressMonitor pm = new PrintStreamProgressMonitor(System.out, System.out);
 
 		String inPathToPrec = "resources/Input/rainfall.csv";
-		String inPathToDischarge = "resources/Input/Q.csv";
 		String inPathToET ="resources/Input/ET.csv";
 		String pathToS= "resources/Output/waterBudget/S.csv";
 		String pathToQ= "resources/Output/waterBudget/Q.csv";

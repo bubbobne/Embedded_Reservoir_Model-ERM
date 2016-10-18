@@ -16,16 +16,23 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package rootZone;
+package canopy;
 
+// TODO: Auto-generated Javadoc
+/**
+ * The Interface SolverODE, for all the ode considered.
+ * Just one method is considered. It returns the
+ * values of variable S after the integration of the ODE
+ * @author Marialaura Bancheri
+ */
+public interface SolverODE {
 
-public class VG implements SwrcModel {
+	/**
+	 * Integrate values.
+	 *
+	 * @return the double value from the integration of the ODE
+	 */
+	abstract public double integrateValues ();
 
-	public double values() {
-		
-		 throw new  NullPointerException("The model is not implemented");
-	}
-	
-	
 
 }

@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package rootZone;
+package canopy;
 
 import org.apache.commons.math3.exception.DimensionMismatchException;
 import org.apache.commons.math3.exception.MaxCountExceededException;
@@ -35,28 +35,27 @@ import org.apache.commons.math3.ode.FirstOrderDifferentialEquations;
  */
 public class waterBudgetODE implements FirstOrderDifferentialEquations{
 
-	public static double Qmod;
+	public static double throughfall;
 
-	public static double totalInputFluxes;
+	public static double rain;
 
-	public static double ETmod;
+	public static double transpiration;
+	
+	public static double rootUpTake;
 
 
 	/**
 	 * Instantiates the first layer parameters .
 	 *
-	 * @param nZ: the product of the porosity and the depth of the root zone 
-	 * @param J: precipitation value
-	 * @param a: coefficient of the non-linear reservoir model
-	 * @param b: exponent of the non-linear reservoir model
-	 * @param ET: the ET value
-	 * @param S: the soil moisture value at the previous time step
-	 * @param s_max: the maximum value of the soil moisture 
+	 * @param rain: precipitation value
+	 * @param ETmod: the modeled ET value
+	 * @param Qmod: the model Q value
 	 */
-	public waterBudgetODE( double totalInputFluxes, double Qmod, double ETmod) {
-		this.Qmod=Qmod;
-		this.totalInputFluxes=totalInputFluxes;
-		this.ETmod=ETmod;
+	public waterBudgetODE(double rain, double throughfall, double transpiration, double rootUpTake) {
+		this.throughfall=throughfall;
+		this.rain=rain;
+		this.transpiration=transpiration;
+		this.rootUpTake=rootUpTake;
 
 	}
 	
@@ -72,7 +71,7 @@ public class waterBudgetODE implements FirstOrderDifferentialEquations{
 	 */
 	public void computeDerivatives(double t, double[] y, double[] yDot)
 			throws MaxCountExceededException, DimensionMismatchException {
-		yDot[0] =(totalInputFluxes-Qmod-ETmod);
+		yDot[0] =(rain-throughfall-transpiration+rootUpTake);
 		
 
 	

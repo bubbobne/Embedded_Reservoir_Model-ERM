@@ -6,14 +6,14 @@ import java.util.HashMap;
 
 import org.jgrasstools.gears.io.timedependent.OmsTimeSeriesIteratorReader;
 import org.jgrasstools.gears.io.timedependent.OmsTimeSeriesIteratorWriter;
-import org.jgrasstools.gears.libs.monitor.PrintStreamProgressMonitor;
-import org.jgrasstools.hortonmachine.utils.HMTestCase;
+import org.junit.Test;
+
 
 import sumSeries.SumSeriesWithConnections;
-import waterBudget.WaterBudget;
 
-public class TestSum extends HMTestCase{
+public class TestSum {
 
+	@Test
 	public void testLinear() throws Exception {
 
 		String startDate = "1994-01-01 00:00";
@@ -21,7 +21,6 @@ public class TestSum extends HMTestCase{
 		int timeStepMinutes = 60;
 		String fId = "ID";
 
-		PrintStreamProgressMonitor pm = new PrintStreamProgressMonitor(System.out, System.out);
 
 		String inPathToQ = "resources/Output/Q_2.csv";
 		String pathToSum= "resources/Output/Sum.csv";

@@ -195,19 +195,19 @@ public class WaterBudget extends JGTModel{
 		double totalInputFluxes=rain+snow;
 
 		/**The conversion in needed for input fluxes, since the rescaled distance is in
-		 * 1/m, the celerity is in m/s, the area is in m^2 and the input are in mm/h*/
+		 * 1/m, the celerity is in m/s, the area is in m^2 and the input are in mm/h
+		 * with the conversion we obtain m/sec*/
 		double conversion=(inTimestep==60)?(1000*3600):(1000*3600*24);
 		
 		/** Computation of the runoff, considering the output of the previous time step */
 		runoff=computeQ(alpha*totalInputFluxes/conversion, runoff);
 
-		/** The ouput of the prevous computation in the average discharge in 1 minute in m^3/s 
-		 * so we need the compute the hpurly average and put it back in mm/h since we want the
-		 * storage in mm/h*/
+		/** The output of the previous computation in the average discharge in 1 minute in m^3/s 
+		 * so we need the compute the hourly average */
 		double Q=computeMean(runoff,step, inTimestep);
 
-		/** computation of the storage*/
-		double waterStorage=computeS(alpha*totalInputFluxes,Q);
+		/** computation of the storage, the disharge must be converted from m^3/s to mm/h*/
+		double waterStorage=computeS(alpha*totalInputFluxes,Q*1000/area*3600);
 
 		/** Save the result in  hashmaps for each station*/
 		storeResult_series(ID,waterStorage,Q);
@@ -275,7 +275,7 @@ public class WaterBudget extends JGTModel{
 	 * @param runoff is the the vector with the discharge values to be averaged 
 	 * @param step is the step we are considering 
 	 * @param inTimeStep is the input time step
-	 * @return the double value averaged over the in time step
+	 * @return the double value averaged over the in time step in m3/s in one hour
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public double computeMean (double [] runoff, int step, int inTimeStep ){

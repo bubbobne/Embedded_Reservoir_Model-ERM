@@ -8,16 +8,18 @@ import org.geotools.coverage.grid.GridCoverage2D;
 import org.jgrasstools.gears.io.rasterreader.OmsRasterReader;
 import org.jgrasstools.gears.io.timedependent.OmsTimeSeriesIteratorReader;
 import org.jgrasstools.gears.io.timedependent.OmsTimeSeriesIteratorWriter;
-import org.jgrasstools.hortonmachine.utils.HMTestCase;
+import org.junit.Test;
+
 
 import runoff.WaterBudget;
 
-public class TestRunoff extends HMTestCase{
+public class TestRunoff{
 
+	@Test
 	public void testLinear() throws Exception {
 
 		String startDate = "1994-01-01 00:00";
-		String endDate = "1994-01-02 00:00";
+		String endDate = "1994-01-10 00:00";
 		int timeStepMinutes = 60;
 		String fId = "ID";
 
@@ -62,7 +64,7 @@ public class TestRunoff extends HMTestCase{
 			waterBudget.solver_model="dp853";
 			waterBudget.inRescaledDistance=width_sup;
 			waterBudget.pCelerity=2;
-			waterBudget.alpha=0.5;
+			waterBudget.alpha=1;
 			waterBudget.inTopindex=topIndex;
 			waterBudget.pSat=2;
 			waterBudget.inTimestep=timeStepMinutes;

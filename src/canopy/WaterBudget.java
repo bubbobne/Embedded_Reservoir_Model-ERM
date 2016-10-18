@@ -17,7 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package groundWater;
+package canopy;
 
 import static org.jgrasstools.gears.libs.modules.JGTConstants.isNovalue;
 
@@ -30,8 +30,10 @@ import oms3.annotations.Execute;
 import oms3.annotations.In;
 import oms3.annotations.Out;
 
+
 import org.geotools.feature.SchemaException;
 import org.jgrasstools.gears.libs.modules.JGTModel;
+
 
 import java.io.IOException;
 
@@ -55,8 +57,30 @@ public class WaterBudget extends JGTModel{
 
 	@Description("Input rain Hashmap")
 	@In
-	public HashMap<Integer, double[]> inHMRechargeValues;
-	
+	public HashMap<Integer, double[]> inHMRain;
+
+
+	@Description("T: Transpiration value for the given time considered")
+	double ETp;
+
+	@Description("Input ETp Hashmap")
+	@In
+	public HashMap<Integer, double[]> inHMETp;
+
+
+	@Description("Input root uptake HM")
+	@In
+	public HashMap<Integer, double[]> inHMRootUpTake;
+
+
+	@Description("Maximum interception capacity")
+	@In
+	public double Imax;	
+
+	@Description("Leaf Area Index")
+	@In
+	public double LAI;
+
 
 	@Description("time step of the simulation")
 	@In
@@ -67,45 +91,56 @@ public class WaterBudget extends JGTModel{
 	double dt ;
 
 
-	@Description("Parameter of the non-linear Reservoir model "
-			+ "for the considered layer")
+	@Description("Area of the basin")
 	@In
-	public static double a ;
+	public static double A ;
 
 
-	@Description("Parameter of non-linear reservoir, for the upper layer")
+	@Description("SCF parameter")
 	@In
-	public static double b;
+	public static double k ;
 
-	@Description("The area of the HRUs in km2")
+
+	@Description("Maximum value of the water storage, needed for the"
+			+ "computation of the Actual EvapoTraspiration")
 	@In
-	public static double A;
+	@Out
+	public static double s_CanopyMax;
 
 
-	@Description("Discharge model: NonLinearReservoir, Clapp-H")
+	@Description("ET model: AET,ExternalValues")
 	@In
-	public String Q_model;
-
+	public String ET_model;
 
 	@Description("ODE solver ")
 	@In
 	public String solver_model;
 
-	DischargeModel model;
+	@Description("Simluted value of AET"
+			+ "at a given time step")
+	double AET;
 
-	
+	ETModel ETmodel;
+
+
 	@Description("The output HashMap with the Water Storage  ")
 	@Out
 	public HashMap<Integer, double[]> outHMStorage= new HashMap<Integer, double[]>() ;
 
 	@Description("The output HashMap with the discharge ")
 	@Out
-	public HashMap<Integer, double[]> outHMDischarge= new HashMap<Integer, double[]>() ;
+	public HashMap<Integer, double[]> outHMThroughfall= new HashMap<Integer, double[]>() ;
+
+	@Description("The output HashMap with the AET ")
+	@Out
+	public HashMap<Integer, double[]> outHMTranspiration = new HashMap<Integer, double[]>() ;
+
 
 	HashMap<Integer, double[]>initialConditionS_i= new HashMap<Integer, double[]>();
 	int step;
-	
-    
+
+
+
 
 	/**
 	 * Process: reading of the data, computation of the
@@ -115,11 +150,12 @@ public class WaterBudget extends JGTModel{
 	 */
 	@Execute
 	public void process() throws Exception {
-		checkNull(inHMRechargeValues);
-		
-       
+		checkNull(inHMRain);
+
+
+
 		// reading the ID of all the stations 
-		Set<Entry<Integer, double[]>> entrySet = inHMRechargeValues.entrySet();
+		Set<Entry<Integer, double[]>> entrySet = inHMRain.entrySet();
 
 		if(step==0){
 			for (Entry<Integer, double[]> entry : entrySet){
@@ -133,17 +169,26 @@ public class WaterBudget extends JGTModel{
 			Integer ID = entry.getKey();
 
 			/**Input data reading*/
-			double recharge = inHMRechargeValues.get(ID)[0];
-			if (isNovalue(recharge)) recharge= 0;
-			
+			double rain = inHMRain.get(ID)[0];
+			if (isNovalue(rain)) rain= 0;
 
-			double waterStorage=computeS(recharge,initialConditionS_i.get(ID)[0]);
-			double discharge=computeQ(waterStorage);
+			/**Input data reading*/
+			double rootUpTake = inHMRootUpTake.get(ID)[0];
+			if (isNovalue(rootUpTake)) rootUpTake= 0;
+
+
+			ETp=0;
+			if (inHMETp != null) ETp = inHMETp.get(ID)[0];
+			if (isNovalue(ETp)) ETp= 0;
+
+			double waterStorage=computeS(rain,initialConditionS_i.get(ID)[0],rootUpTake);
+			double throughfall=computeThroughfall(rain, waterStorage);
+			double evapotranspiration=computeAET(waterStorage);
 
 
 			/** Save the result in  hashmaps for each station*/
-			storeResult_series(ID,waterStorage,discharge);
-			
+			storeResult_series(ID,waterStorage,throughfall,evapotranspiration);
+
 			initialConditionS_i.put(ID,new double[]{waterStorage});
 
 		}
@@ -157,20 +202,23 @@ public class WaterBudget extends JGTModel{
 	 * Compute the water storage
 	 *
 	 * @param J: input rain 
+	 * @param Qinput : input discharge
+	 * @param ET: input potential ET
 	 * @return the water storage, according to the model and the layer
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public double computeS(double totalInputFluxes, double S_i) throws IOException {
+	public double computeS(double rain, double S_i, double rootUpTake) throws IOException {
 		/**integration time*/
 		dt=1E-4;
 
-		/** SimpleFactory for the computation of Q, according to the model*/
-		model=SimpleDischargeModelFactory.createModel(Q_model, a, S_i, b);
-		double Qmod=model.dischargeValues();
+
+		/** SimpleFactory for the computation of ET, according to the model*/
+		ETmodel=SimpleETModelFactory.createModel(ET_model,S_i,s_CanopyMax,k,LAI);
+		double Tmod=ETp*ETmodel.ETcoefficient();
 
 
 		/** Creation of the differential equation*/
-		FirstOrderDifferentialEquations ode=new waterBudgetODE(totalInputFluxes,Qmod);			
+		FirstOrderDifferentialEquations ode=new waterBudgetODE(rain,computeThroughfall(rain,S_i), Tmod,rootUpTake);			
 
 		/** Boundaries conditions*/
 		double[] y = new double[] { S_i, 0 };
@@ -189,28 +237,30 @@ public class WaterBudget extends JGTModel{
 		return S_i;
 	}
 
-	// computation of the discharge according to the mode: 
-	// mode external --> external value
-	// else --> model
-	/**
-	 * Compute computation of the discharge according to the mode:
-	 * mode external --> external value
-	 * else --> non-linear reservoir model
-	 *
-	 * @param Qinput: input discharge value
-	 * @return the double value of the simulated discharge
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 */
-	public double computeQ(double S_i) throws IOException {
-		model=SimpleDischargeModelFactory.createModel(Q_model, a, S_i, b);
-		double Q=model.dischargeValues();
-		// the disharge is converted from mm3/mm2/h to m3/s
-		Q=Q/1000*A*Math.pow(10, 6)/3600;
-		return Q;
+
+	public double computeThroughfall(double rain, double S_i) throws IOException {
+		double throughfall=rain-Math.min(Imax-rain, S_i);
+		return throughfall;
 	}
 
 
-	
+
+	/**
+	 * Compute the AET
+	 *
+	 * @param ETinput: the input potential ET
+	 * @return the double value od the AET
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	public double computeAET(double S_i) throws IOException {
+		/** SimpleFactory for the computation of ET, according to the model*/
+		ETmodel=SimpleETModelFactory.createModel(ET_model,S_i,s_CanopyMax,k,LAI);
+		double Tmod=ETp*ETmodel.ETcoefficient();
+		return Tmod;
+	}
+
+
+
 
 	/**
 	 * Store of the results in hashmaps 
@@ -218,18 +268,17 @@ public class WaterBudget extends JGTModel{
 	 * @param waterStorage is the water storage
 	 * @param discharge is the discharge
 	 * @param evapotranspiration is the evapotranspiration
-	 * @param quickRunoff is the water quick runoff from the layer
-	 * @param drainage is drainage toward the lower layer
 	 * @throws SchemaException the schema exception
 	 */
-	
-	private void storeResult_series(int ID, double waterStorage,double discharge) throws SchemaException {
+
+	private void storeResult_series(int ID, double waterStorage,double discharge,
+			double evapotranspiration) throws SchemaException {
 
 		outHMStorage.put(ID, new double[]{waterStorage});
-		outHMDischarge.put(ID, new double[]{discharge});
-
+		outHMThroughfall.put(ID, new double[]{discharge});
+		outHMTranspiration.put(ID, new double[]{evapotranspiration});
 
 	}
-	
+
 
 }
