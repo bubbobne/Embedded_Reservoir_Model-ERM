@@ -22,27 +22,24 @@ package sumSeries;
 import static org.jgrasstools.gears.libs.modules.JGTConstants.isNovalue;
 
 import java.util.HashMap;
-import java.util.Set;
-import java.util.Map.Entry;
+import java.util.Map;
 
 import oms3.annotations.Description;
 import oms3.annotations.Execute;
+import oms3.annotations.Finalize;
 import oms3.annotations.In;
+import oms3.annotations.Initialize;
 import oms3.annotations.Out;
 
-import org.geotools.feature.SchemaException;
 import org.jgrasstools.gears.libs.modules.JGTModel;
-import java.io.IOException;
 
-
-
-
-// TODO: Auto-generated Javadoc
 /**
  * The Class SumSeries compute the sum of two time series
+ *
+ * @author sidereus <francesco.serafin.3@gmail.com>
+ * @date Nov 2nd, 2016
  */
-public class SumSeries extends JGTModel{
-
+public class SumSeries extends JGTModel {
 
 	@Description("Input first discharge Hashmap")
 	@In
@@ -56,9 +53,18 @@ public class SumSeries extends JGTModel{
 	@Description("The output HashMap with the sum"
 			+ "for the considered layer ")
 	@Out
-	public HashMap<Integer, double[]> outHMQtot= new HashMap<Integer, double[]>() ;
+	public static HashMap<Integer, double[]> outHMQtot;
 
+	@In
+	public static Integer id;
 
+	private static int timeSeriesCounter = 0;
+
+	@Initialize
+	public void init() {
+		outHMQtot = new HashMap<>();
+        timeSeriesCounter = 0;
+	}
 
 	/**
 	 * Process.
@@ -68,61 +74,37 @@ public class SumSeries extends JGTModel{
 	@Execute
 	public void process() throws Exception {
 
-		//checkNull(inHMDischarge);
+		System.out.println(id + ": processing sum series");
 
-		Set<Entry<Integer, double[]>> entrySet = inHMDischarge.entrySet();
+		checkNull(inHMDischarge);
+		double[] sum = new double[1];
 
-		Set<Entry<Integer, double[]>> entrySet2 = inHMDischarge2.entrySet();
+		sumInHMDischarge(sum, inHMDischarge, timeSeriesCounter);
+        sumInHMDischarge(sum, inHMDischarge2, 0);
 
+		outHMQtot.put(id, sum);
+		timeSeriesCounter += 1;
 
-		for (Entry<Integer, double[]> entry : entrySet){
-			for (Entry<Integer, double[]> entry2 : entrySet2){
+	}
 
-				Integer ID = entry.getKey();
-				Integer ID2 = entry2.getKey();
+	@Finalize
+	public void finalize() {
+		timeSeriesCounter = 0;
+		outHMQtot.clear();
+	}
 
-				double Q1 =inHMDischarge.get(ID)[0];
-				if (isNovalue(Q1)) Q1= 0;
+	private void sumInHMDischarge(double[] sum, final HashMap<Integer,
+			double[]> discharge, int index) {
 
-				double Q2 =inHMDischarge2.get(ID2)[0];
-				if (isNovalue(Q2)) Q2= 0;
-
-				/** sum of the given quantities */
-				double sum=sum(Q1,Q2);
-
-				/** Save the result in hashmap output */
-				storeResult_series(ID,sum);
+        if (discharge != null) {
+			for (Map.Entry<Integer, double[]> me : discharge.entrySet()) {
+				double tmpDischarge = me.getValue()[index];
+				if (isNovalue(tmpDischarge)) tmpDischarge = 0.0;
+				sum[0] += tmpDischarge;
 			}
 		}
 
 	}
 
-
-
-
-	/**
-	 * Sum:	computation of the sum
-	 *
-	 * @param Q1: the first quantity
-	 * @param Q2 : the second quantity
-	 * @return the double value of the sum
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 */
-	public double sum(double Q1, double Q2) throws IOException {
-		double Qtot=Q1+Q2;
-		return Qtot;
-	}
-
-
-	/**
-	 * Store result_series
-	 *
-	 * @param Qtot: the vector with the sums
-	 * @throws SchemaException the schema exception
-	 */
-	private void storeResult_series(int ID,double Qtot) throws SchemaException {	
-		outHMQtot.put(ID, new double[]{Qtot});
-
-
-	}
 }
+
