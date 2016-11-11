@@ -1,4 +1,4 @@
-package rootZone;
+package runoff;
 
 public class SimpleETModelFactory {
 

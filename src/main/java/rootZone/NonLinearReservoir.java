@@ -1,6 +1,6 @@
 package rootZone;
 
-public class NonLinearReservoir implements DischargeModel{
+public class NonLinearReservoir implements UpTakeModel{
 	
 	double a;
 	double S_i;

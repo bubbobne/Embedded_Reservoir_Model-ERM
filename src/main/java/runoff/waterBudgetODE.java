@@ -36,6 +36,7 @@ import org.apache.commons.math3.ode.FirstOrderDifferentialEquations;
 public class waterBudgetODE implements FirstOrderDifferentialEquations{
 
 	public static double Qmod;
+	public static double Emod;
 
 
 	public static double totalInputFluxes;
@@ -51,9 +52,10 @@ public class waterBudgetODE implements FirstOrderDifferentialEquations{
 	 * @param S: the soil moisture value at the previous time step
 	 * @param s_max: the maximum value of the soil moisture 
 	 */
-	public waterBudgetODE(double totalInputFluxes, double Qmod) {
+	public waterBudgetODE(double totalInputFluxes, double Qmod, double Emod) {
 		this.Qmod=Qmod;
 		this.totalInputFluxes=totalInputFluxes;
+		this.Emod=Emod;
 
 	}
 	
@@ -69,7 +71,7 @@ public class waterBudgetODE implements FirstOrderDifferentialEquations{
 	 */
 	public void computeDerivatives(double t, double[] y, double[] yDot)
 			throws MaxCountExceededException, DimensionMismatchException {
-		yDot[0] =totalInputFluxes-Qmod;
+		yDot[0] =totalInputFluxes-Qmod-Emod;
 		
 
 	

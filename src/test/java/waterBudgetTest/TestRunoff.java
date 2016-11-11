@@ -11,20 +11,20 @@ import org.jgrasstools.gears.io.timedependent.OmsTimeSeriesIteratorWriter;
 import org.junit.Test;
 
 
-import runoff.WaterBudget;
+import runoff.WaterBudgetRunoff;
 
 public class TestRunoff{
 
 	@Test
 	public void testLinear() throws Exception {
 
-		String startDate = "1994-01-01 00:00";
-		String endDate = "1994-01-10 00:00";
-		int timeStepMinutes = 60;
+		String startDate = "2000-07-01 00:00";
+		String endDate = "2000-07-20 00:00";
+		int timeStepMinutes = 60*24;
 		String fId = "ID";
 
-		String inPathToPrec = "resources/Input/rainfall.csv";
-		String pathToQ= "resources/Output/runoff/Q_runoff.csv";
+		String inPathToPrec = "resources/Input/rain.csv";
+		String pathToQ= "resources/Output/runoff/Q_runoff_2.csv";
 
 
 		
@@ -41,10 +41,10 @@ public class TestRunoff{
 		
 
 		
-		WaterBudget waterBudget= new WaterBudget();
+		WaterBudgetRunoff waterBudgetRunoff= new WaterBudgetRunoff();
 		
 		OmsRasterReader Wsup = new OmsRasterReader();
-		Wsup.file = "resources/Input/width_10.asc";
+		Wsup.file = "resources/Input/rescaled_4.asc";
 		Wsup.fileNovalue = -9999.0;
 		Wsup.geodataNovalue = Double.NaN;
 		Wsup.process();
@@ -52,7 +52,7 @@ public class TestRunoff{
 		
 		
 		OmsRasterReader topindex = new OmsRasterReader();
-		topindex.file = "resources/Input/topIndex.asc";
+		topindex.file = "resources/Input/top_4.asc";
 		topindex.fileNovalue = -9999.0;
 		topindex.geodataNovalue = Double.NaN;
 		topindex.process();
@@ -61,25 +61,27 @@ public class TestRunoff{
 
 		while( JReader.doProcess ) {
 		
-			waterBudget.solver_model="dp853";
-			waterBudget.inRescaledDistance=width_sup;
-			waterBudget.pCelerity=2;
-			waterBudget.alpha=1;
-			waterBudget.inTopindex=topIndex;
-			waterBudget.pSat=2;
-			waterBudget.inTimestep=timeStepMinutes;
-			waterBudget.tStartDate=startDate;
-			waterBudget.tEndDate=endDate;
-			waterBudget.ID=209;
+			waterBudgetRunoff.solver_model="dp853";
+			waterBudgetRunoff.ET_model="AET";
+			waterBudgetRunoff.inRescaledDistance=width_sup;
+			waterBudgetRunoff.pCelerity=2;
+			waterBudgetRunoff.inTopindex=topIndex;
+			waterBudgetRunoff.pSat=90;
+			waterBudgetRunoff.inTimestep=timeStepMinutes;
+			waterBudgetRunoff.tStartDate=startDate;
+			waterBudgetRunoff.tEndDate=endDate;
+			waterBudgetRunoff.ID=2;
+			waterBudgetRunoff.alpha=1;
+			waterBudgetRunoff.s_RunoffMax=0.001;
 			
 			JReader.nextRecord();
 			
 			HashMap<Integer, double[]> id2ValueMap = JReader.outData;
-			waterBudget.inRainValues = id2ValueMap;
+			waterBudgetRunoff.inRainValues = id2ValueMap;
 
-            waterBudget.process();
+			waterBudgetRunoff.process();
             
-            HashMap<Integer, double[]> outHMDischarge = waterBudget.outHMDischarge;
+            HashMap<Integer, double[]> outHMDischarge = waterBudgetRunoff.outHMDischarge;
 
 			
 			writerQ.inData = outHMDischarge;

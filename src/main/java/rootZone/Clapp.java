@@ -1,6 +1,6 @@
 package rootZone;
 
-public class Clapp implements DischargeModel{
+public class Clapp implements UpTakeModel{
 	
 	double a;
 	double S_i;

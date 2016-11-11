@@ -64,11 +64,11 @@ public class WFIUHKinematic {
 	 */
 	public double [] calculateQ() {
 
-		// tcorr is the concentration time in seconds 
-		double tcorr = widthFunction[widthFunction.length - 1][0];
+		// tcorr is the concentration time in minutes
+		double tcorr =(int) widthFunction[widthFunction.length - 1][0]/60;
 
-		// is the duration of the precipitation in seconds
-		int tpmax =inTimestep*60;
+		// is the duration of the precipitation in minutes
+		int tpmax =inTimestep;
 
 		//is the discharge computed in m^3/s according to the WFIUH at time step i+1 (i1)
 		double[] Q_i1 = new double[(int)tcorr];
@@ -78,21 +78,22 @@ public class WFIUHKinematic {
 
 			if (t <= tpmax) {
 
-				Q_i1[t]=(double) (totalInputFluxes * area* ModelsEngine.width_interpolate(widthFunction, t, 0, 2))*pCelerity;
+				Q_i1[t]=(double) (totalInputFluxes * area* ModelsEngine.width_interpolate(widthFunction, t*60, 0, 2))*pCelerity;
 
 			} else {
-				Q_i1[t]= (double) (totalInputFluxes * area* (ModelsEngine.width_interpolate(widthFunction, t, 0, 2) - ModelsEngine
-						.width_interpolate(widthFunction, t - tpmax, 0, 2)))*pCelerity;
+				Q_i1[t]= (double) (totalInputFluxes * area* (ModelsEngine.width_interpolate(widthFunction, t*60, 0, 2) - ModelsEngine
+						.width_interpolate(widthFunction, t*60 - tpmax, 0, 2)))*pCelerity;
 			}
 		}
 
-		// is the average discharge in m^3/s over 60 seconds 
-		double [] Q=computeMean(Q_i1);
+		// is the average discharge in m^3/s over 60 minutes 
+		 //double [] Q=computeMean(Q_i1);
+
 
 		// sum of the different contributes of the discharge (previous time step and actual time step)
 		// where the two time series overlap
-		for( int t = 0; t <  Q.length; t += 1 ) {	
-			Q_i[t+step*inTimestep]= Q_i[t+step*inTimestep]+Q[t];
+		for( int t = 0; t <  Q_i1.length; t ++) {	
+			Q_i[t]= Q_i[t]+Q_i1[t];
 		}
 
 		return Q_i;
@@ -112,8 +113,8 @@ public class WFIUHKinematic {
 
 		int step=60;
 
-		
-		double [] sum=new double [runoff.length/step];
+	
+		double [] sum=new double [(runoff.length/step)];
 
 		for(int t=0; t<sum.length;t++){
 			for (int i=t*step;i<step*(t+1)-1;i++){
