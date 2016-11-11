@@ -73,6 +73,7 @@ public class TestRootZone{
 			waterBudget.b=1;
 			waterBudget.s_RootZoneMax=0.005704;
 			waterBudget.Pmax=0.5;
+			waterBudget.pB=2.5;
 
 			
 			JReader.nextRecord();

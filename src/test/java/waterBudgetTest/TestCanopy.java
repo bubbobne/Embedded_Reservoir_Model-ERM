@@ -16,22 +16,22 @@ public class TestCanopy{
 	@Test
 	public void testLinear() throws Exception {
 
-		String startDate = "2000-11-29 00:00";
-		String endDate = "2001-11-25 00:00";
-		int timeStepMinutes = 60*24;
+		String startDate = "1994-01-01 00:00";
+		String endDate = "1994-01-02 00:00";
+		int timeStepMinutes = 60;
 		String fId = "ID";
 		
 
 
 
-		String inPathToPrec = "/Users/marialaura/Desktop/dottorato/Resevoirs/output/melting.csv";
-		String inPathToET ="/Users/marialaura/Desktop/dottorato/Resevoirs/output/ETP.csv";
+		String inPathToPrec = "resources/Input/rainfall.csv";
+		String inPathToET ="resources/Input/ET.csv";
 		//String inPathToUpTake= "resources/Output/rootZone/UpTake.csv";
-		String inPathToLAI= "/Users/marialaura/Desktop/dottorato/Resevoirs/data/LockVale/singolo/LAI.csv";		
+		String inPathToLAI= "resources/Input/LAI.csv";		
 		
-		String pathToS= "/Users/marialaura/Desktop/dottorato/Resevoirs/output/S.csv";
-		String pathTroughfall= "/Users/marialaura/Desktop/dottorato/Resevoirs/output/Throughfall.csv";
-		String pathToET= "/Users/marialaura/Desktop/dottorato/Resevoirs/output/ET.csv";
+		String pathToS= "resources/Output/canopy/S.csv";
+		String pathTroughfall= "resources/Output/canopy/Throughfall.csv";
+		String pathToET= "resources/Output/canopy/ET.csv";
 
 		
 		OmsTimeSeriesIteratorReader JReader = getTimeseriesReader(inPathToPrec, fId, startDate, endDate, timeStepMinutes);
