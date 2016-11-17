@@ -75,7 +75,7 @@ public class SumNodes extends JGTModel {
 	public void process() throws Exception {
 
 		System.out.println(id + ": processing sum series - Time step: " +
-				timeSeriesCounter+1);
+				timeSeriesCounter);
 
 		checkNull(inHMDischarge);
 		double[] sum = new double[1];
@@ -89,10 +89,7 @@ public class SumNodes extends JGTModel {
 	}
 
 	@Finalize
-	public void finalize() {
-		timeSeriesCounter = 0;
-		outHMQtot.clear();
-	}
+	public void finalize() {}
 
 	private void sumInHMDischarge(double[] sum, final HashMap<Integer,
 			double[]> discharge, int index) {
