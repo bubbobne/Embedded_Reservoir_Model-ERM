@@ -218,6 +218,8 @@ public class WaterBudgetRunoff{
 		 * with the conversion we obtain m/sec
 		 **/
 		double conversion=(inTimestep==60)?(1000*3600):(1000*3600*24);
+		
+		//System.out.println(alpha);
 
 		/** Computation of the runoff, considering the output of the previous time step */
 		runoff=computeQ(alpha*totalInputFluxes/conversion, runoff);

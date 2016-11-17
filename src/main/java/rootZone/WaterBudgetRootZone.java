@@ -114,6 +114,11 @@ public class WaterBudgetRootZone{
 	@Description("Discharge model: NonLinearReservoir, Clapp-H")
 	@In
 	public String UpTake_model;
+	
+	
+	@Description("Alpha model: Hymod, Value ")
+	@In
+	public String Alpha_model;
 
 	@Description("ET model: AET")
 	@In
@@ -125,6 +130,7 @@ public class WaterBudgetRootZone{
 
 	UpTakeModel model;
 	ETModel ETModel;
+	AlphaModel alphaModel;
 	
 	@Description("The output HashMap with the Water Storage  ")
 	@Out
@@ -183,7 +189,12 @@ public class WaterBudgetRootZone{
 			if (inHMSnow != null) snow=inHMSnow.get(ID)[0];
 			if (isNovalue(snow)) snow= 0;
 
-			double alpha=(rain==0)?0:alpha(initialConditionS_i.get(ID)[0],rain+snow,s_RootZoneMax);
+			if (pB==null)pB=0.0;
+			alphaModel=SimpleAlphaModelFactory.createModel(Alpha_model,pB, s_RootZoneMax, alpha, rain+snow,initialConditionS_i.get(ID)[0]);
+			double alpha=(rain==0)?0:alphaModel.alphaValues();
+					
+			
+			System.out.println(alpha);
 			
 			
 			double totalInputFluxes=(1-alpha)*(rain+snow);
@@ -212,15 +223,6 @@ public class WaterBudgetRootZone{
 	}
 	
 	
-	private double alpha( double S_rz, double Pval, double S_max) {
- 		double pCmax=S_max *(pB+1);
- 		double coeff1 = ((1.0 - ((pB + 1.0) * (S_rz) / pCmax)));
- 		double exp = 1.0 / (pB + 1.0);
- 		double ct_prev = pCmax * (1.0 - Math.pow(coeff1, exp));
- 		double UT1 = Math.max((Pval - pCmax + ct_prev), 0.0);     
- 		return alpha=UT1/Pval;
- 	}
-
 	
 	
 	/**
@@ -248,8 +250,8 @@ public class WaterBudgetRootZone{
 		double Emod=ETModel.ETcoefficient()*ETp;
 		
 		
-		//double Rg=Pmax*S_i/s_RootZoneMax;
-		double Rg=Pmax*S_i;
+		double Rg=Pmax*S_i/s_RootZoneMax;
+		//double Rg=Pmax*S_i;
 
 		/** Creation of the differential equation*/
 		FirstOrderDifferentialEquations ode=new waterBudgetODE(totalInputFluxes,upTake, Emod, Rg);			
@@ -298,6 +300,7 @@ public class WaterBudgetRootZone{
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public double computeR(double S_i) throws IOException {
+		//double Rg=Pmax*S_i;
 		double Rg=Pmax*S_i/s_RootZoneMax;
 		return Rg;
 	}

@@ -183,13 +183,8 @@ public class WaterBudgetGroundWater{
 		return S_i;
 	}
 
-	// computation of the discharge according to the mode: 
-	// mode external --> external value
-	// else --> model
+
 	/**
-	 * Compute computation of the discharge according to the mode:
-	 * mode external --> external value
-	 * else --> non-linear reservoir model
 	 *
 	 * @param Qinput: input discharge value
 	 * @return the double value of the simulated discharge
@@ -198,7 +193,7 @@ public class WaterBudgetGroundWater{
 	public double computeQ(double S_i) throws IOException {
 		model=SimpleDischargeModelFactory.createModel(Q_model, a, S_i, b);
 		double Q=model.dischargeValues();
-		// the disharge is converted from mm3/mm2/h to m3/s
+		// the discharge is converted from mm3/mm2/h to m3/s
 		Q=Q/1000*A*Math.pow(10, 6)/3600;
 		return Q;
 	}

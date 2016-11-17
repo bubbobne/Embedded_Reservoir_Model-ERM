@@ -18,13 +18,13 @@ public class TestRunoff{
 	@Test
 	public void testLinear() throws Exception {
 
-		String startDate = "2000-07-01 00:00";
-		String endDate = "2000-07-20 00:00";
-		int timeStepMinutes = 60*24;
+		String startDate = "1996-09-17 20:00";
+		String endDate = "1998-12-31 00:00";
+		int timeStepMinutes = 60;
 		String fId = "ID";
 
-		String inPathToPrec = "resources/Input/rain.csv";
-		String pathToQ= "resources/Output/runoff/Q_runoff_2.csv";
+		String inPathToPrec = "/Users/marialaura/Dropbox/tree_dev/Resevoirs/data/Posina/36/precip_36.csv";
+		String pathToQ= "resources/Output/runoff/Q_runoff_36.csv";
 
 
 		
@@ -44,7 +44,7 @@ public class TestRunoff{
 		WaterBudgetRunoff waterBudgetRunoff= new WaterBudgetRunoff();
 		
 		OmsRasterReader Wsup = new OmsRasterReader();
-		Wsup.file = "resources/Input/rescaled_4.asc";
+		Wsup.file = "/Users/marialaura/Dropbox/tree_dev/Resevoirs/data/Posina/36/rescaled_36.asc";
 		Wsup.fileNovalue = -9999.0;
 		Wsup.geodataNovalue = Double.NaN;
 		Wsup.process();
@@ -52,7 +52,7 @@ public class TestRunoff{
 		
 		
 		OmsRasterReader topindex = new OmsRasterReader();
-		topindex.file = "resources/Input/top_4.asc";
+		topindex.file = "/Users/marialaura/Dropbox/tree_dev/Resevoirs/data/Posina/36/top_36.asc";
 		topindex.fileNovalue = -9999.0;
 		topindex.geodataNovalue = Double.NaN;
 		topindex.process();
@@ -70,9 +70,9 @@ public class TestRunoff{
 			waterBudgetRunoff.inTimestep=timeStepMinutes;
 			waterBudgetRunoff.tStartDate=startDate;
 			waterBudgetRunoff.tEndDate=endDate;
-			waterBudgetRunoff.ID=2;
+			waterBudgetRunoff.ID=36;
 			waterBudgetRunoff.alpha=1;
-			waterBudgetRunoff.s_RunoffMax=0.001;
+			waterBudgetRunoff.s_RunoffMax=5.031;
 			
 			JReader.nextRecord();
 			
