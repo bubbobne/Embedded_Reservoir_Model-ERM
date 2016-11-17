@@ -23,8 +23,8 @@ public class TestRunoff{
 		int timeStepMinutes = 60;
 		String fId = "ID";
 
-		String inPathToPrec = "/Users/marialaura/Dropbox/tree_dev/Resevoirs/data/Posina/36/precip_36.csv";
-		String pathToQ= "resources/Output/runoff/Q_runoff_36.csv";
+		String inPathToPrec = "resources/Input/rainfall.csv";
+		String pathToQ= "resources/Output/runoff/Q_runoff.csv";
 
 
 		
@@ -44,7 +44,7 @@ public class TestRunoff{
 		WaterBudgetRunoff waterBudgetRunoff= new WaterBudgetRunoff();
 		
 		OmsRasterReader Wsup = new OmsRasterReader();
-		Wsup.file = "/Users/marialaura/Dropbox/tree_dev/Resevoirs/data/Posina/36/rescaled_36.asc";
+		Wsup.file = "resources/Input/rescaled_4.asc";
 		Wsup.fileNovalue = -9999.0;
 		Wsup.geodataNovalue = Double.NaN;
 		Wsup.process();
@@ -52,7 +52,7 @@ public class TestRunoff{
 		
 		
 		OmsRasterReader topindex = new OmsRasterReader();
-		topindex.file = "/Users/marialaura/Dropbox/tree_dev/Resevoirs/data/Posina/36/top_36.asc";
+		topindex.file = "resources/Input/top_4.asc";
 		topindex.fileNovalue = -9999.0;
 		topindex.geodataNovalue = Double.NaN;
 		topindex.process();

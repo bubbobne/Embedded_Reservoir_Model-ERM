@@ -97,6 +97,7 @@ public class WaterBudgetRootZone{
 	
 	@Description("partitioning coefficient between the reserovir")
 	@Unit("-")
+	@In
 	@Out
 	public double alpha;
 
@@ -194,7 +195,7 @@ public class WaterBudgetRootZone{
 			double alpha=(rain==0)?0:alphaModel.alphaValues();
 					
 			
-			System.out.println(alpha);
+			//System.out.println(alpha);
 			
 			
 			double totalInputFluxes=(1-alpha)*(rain+snow);
