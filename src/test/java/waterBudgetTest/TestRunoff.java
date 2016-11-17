@@ -19,12 +19,12 @@ public class TestRunoff{
 	public void testLinear() throws Exception {
 
 		String startDate = "1996-09-17 20:00";
-		String endDate = "1998-12-31 00:00";
+		String endDate = "1996-09-18 20:00";
 		int timeStepMinutes = 60;
 		String fId = "ID";
 
 		String inPathToPrec = "resources/Input/rainfall.csv";
-		String pathToQ= "resources/Output/runoff/Q_runoff.csv";
+		String pathToQ= "resources/Output/runoff/Q_runoff_2.csv";
 
 
 		
@@ -70,7 +70,7 @@ public class TestRunoff{
 			waterBudgetRunoff.inTimestep=timeStepMinutes;
 			waterBudgetRunoff.tStartDate=startDate;
 			waterBudgetRunoff.tEndDate=endDate;
-			waterBudgetRunoff.ID=36;
+			waterBudgetRunoff.ID=209;
 			waterBudgetRunoff.alpha=1;
 			waterBudgetRunoff.s_RunoffMax=5.031;
 			
