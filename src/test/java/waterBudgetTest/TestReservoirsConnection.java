@@ -159,7 +159,7 @@ public class TestReservoirsConnection{
 			waterBudgetRZ.s_RootZoneMax=0.005704;
 			waterBudgetRZ.Pmax=0.5;
 			waterBudgetRZ.pB=4.5;
-			//waterBudgetRZ.Alpha_model="Hymod";
+			waterBudgetRZ.pCmax=10;
 			waterBudgetRZ.connectTOcanopy=false;
 			
 			waterBudgetGW.solver_model="dp853";
