@@ -150,10 +150,7 @@ public class WaterBudgetCanopy{
 			double rain = inHMRain.get(ID)[0];
 			if (isNovalue(rain)) rain= 0;
 
-			/**Input data reading*/
 			double rootUpTake;
-			
-			//|//inHMRootUpTake.isEmpty()
 			if (inHMRootUpTake==null) rootUpTake=0;
 			else if (inHMRootUpTake.isEmpty()) rootUpTake=0;
 			else {

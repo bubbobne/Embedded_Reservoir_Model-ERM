@@ -85,6 +85,9 @@ public class WaterBudgetRootZone{
 	@In
 	public double b;
 
+	@Description("The maximum storage capacity")
+	@In
+	public double pCmax;
 
 	@Description("Maximum percolation rate")
 	@In
@@ -97,7 +100,6 @@ public class WaterBudgetRootZone{
 	
 	@Description("partitioning coefficient between the reserovir")
 	@Unit("-")
-	@In
 	@Out
 	public double alpha;
 
@@ -115,11 +117,6 @@ public class WaterBudgetRootZone{
 	@Description("Discharge model: NonLinearReservoir, Clapp-H")
 	@In
 	public String UpTake_model;
-	
-	
-	@Description("Alpha model: Hymod, Value ")
-	@In
-	public String Alpha_model;
 
 	@Description("ET model: AET")
 	@In
@@ -131,7 +128,6 @@ public class WaterBudgetRootZone{
 
 	UpTakeModel model;
 	ETModel ETModel;
-	AlphaModel alphaModel;
 	
 	@Description("The output HashMap with the Water Storage  ")
 	@Out
@@ -190,12 +186,9 @@ public class WaterBudgetRootZone{
 			if (inHMSnow != null) snow=inHMSnow.get(ID)[0];
 			if (isNovalue(snow)) snow= 0;
 
-			if (pB==null)pB=0.0;
-			alphaModel=SimpleAlphaModelFactory.createModel(Alpha_model,pB, s_RootZoneMax, alpha, rain+snow,initialConditionS_i.get(ID)[0]);
-			double alpha=(rain==0)?0:alphaModel.alphaValues();
-					
+			double alpha=(rain==0)?0:alpha(initialConditionS_i.get(ID)[0],rain+snow,s_RootZoneMax);
 			
-			//System.out.println(alpha);
+			System.out.println(alpha);
 			
 			
 			double totalInputFluxes=(1-alpha)*(rain+snow);
@@ -224,6 +217,15 @@ public class WaterBudgetRootZone{
 	}
 	
 	
+	private double alpha( double S_rz, double Pval, double S_max) {
+ 		//double pCmax=S_max *(pB+1);
+ 		double coeff1 = ((1.0 - ((pB + 1.0) * (S_rz) / pCmax)));
+ 		double exp = 1.0 / (pB + 1.0);
+ 		double ct_prev = pCmax * (1.0 - Math.pow(coeff1, exp));
+ 		double UT1 = Math.max((Pval - pCmax + ct_prev), 0.0);     
+ 		return alpha=UT1/Pval;
+ 	}
+
 	
 	
 	/**
@@ -239,8 +241,8 @@ public class WaterBudgetRootZone{
 		/**integration time*/
 		dt=1E-4;
 
+		/** SimpleFactory for the computation of the UpTake, according to the model*/
 		double upTake=0;
-		/** SimpleFactory for the computation of Q, according to the model*/
 		if (connectTOcanopy){
 		model=SimpleDischargeModelFactory.createModel(UpTake_model, a, S_i, b);
 		upTake=model.dischargeValues();
