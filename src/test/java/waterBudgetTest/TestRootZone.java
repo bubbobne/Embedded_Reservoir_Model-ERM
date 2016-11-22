@@ -74,7 +74,7 @@ public class TestRootZone{
 			waterBudget.s_RootZoneMax=0.005704;
 			waterBudget.Pmax=10;
 			waterBudget.pB=2.5;
-			waterBudget.pCmax=10;
+			waterBudget.pCmax=12;
 			//waterBudget.Alpha_model="Hymod";
 
 			

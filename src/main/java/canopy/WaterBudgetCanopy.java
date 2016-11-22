@@ -77,6 +77,16 @@ public class WaterBudgetCanopy{
 	@Description("SCF parameter")
 	@In
 	public static double k ;
+	
+	@Description("Throughfall paramter")
+	@In
+	public static double a_c ;
+	
+	
+	
+	@Description("Throughfall paramter")
+	@In
+	public static double b_c ;
 
 
 	@Description("Maximum value of the water storage, needed for the"
@@ -227,7 +237,8 @@ public class WaterBudgetCanopy{
 
 
 	public double computeThroughfall(double rain, double S_i) throws IOException {
-		double throughfall=rain-Math.min(Imax-S_i, rain);
+		double throughfall=(S_i>Imax)?Math.pow(a_c*S_i,b_c):0;
+		//double throughfall=rain-Math.min(Imax-S_i, rain);
 		return throughfall;
 	}
 

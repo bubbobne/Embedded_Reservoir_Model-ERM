@@ -72,6 +72,8 @@ public class TestCanopy{
 			waterBudget.Imax=2;
 			waterBudget.k=0.463;
 			waterBudget.s_CanopyMax=0.005704;
+			waterBudget.a_c=2;
+			waterBudget.b_c=1;
 
 			
 			JReader.nextRecord();

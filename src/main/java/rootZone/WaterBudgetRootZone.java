@@ -188,10 +188,11 @@ public class WaterBudgetRootZone{
 
 			double alpha=(rain==0)?0:alpha(initialConditionS_i.get(ID)[0],rain+snow,s_RootZoneMax);
 			
-			System.out.println(alpha);
+			//System.out.println("alpha: "+ alpha);
 			
 			
 			double totalInputFluxes=(1-alpha)*(rain+snow);
+			
 
 			double ETp=0;
 			if (inHMETp != null) ETp = inHMETp.get(ID)[0];
@@ -201,7 +202,9 @@ public class WaterBudgetRootZone{
 			
 			double upTake=(connectTOcanopy)?computeUpTake(waterStorage):0;
 			double evapotranspiration=computeAET(waterStorage, ETp);
+						
 			double drainage=computeR(waterStorage);
+			
 			
 
 			/** Save the result in  hashmaps for each station*/
@@ -222,8 +225,14 @@ public class WaterBudgetRootZone{
  		double coeff1 = ((1.0 - ((pB + 1.0) * (S_rz) / pCmax)));
  		double exp = 1.0 / (pB + 1.0);
  		double ct_prev = pCmax * (1.0 - Math.pow(coeff1, exp));
- 		double UT1 = Math.max((Pval - pCmax + ct_prev), 0.0);     
- 		return alpha=UT1/Pval;
+ 		double UT1 = Math.max((Pval - pCmax + ct_prev), 0.0);
+        //Pval = Pval - UT1;
+        double dummy = Math.min(((ct_prev + Pval- UT1) / pCmax), 1.0);
+        double coeff2 = (1.0 - dummy);
+        double exp2 = (pB + 1.0);
+        double xn = (pCmax / (pB + 1.0)) * (1.0 - (Math.pow(coeff2, exp2)));
+        double UT2 = Math.max(Pval- UT1 - (xn - S_rz), 0);
+ 		return alpha=(UT1+UT2)/Pval;
  	}
 
 	

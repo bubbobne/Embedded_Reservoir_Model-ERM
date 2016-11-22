@@ -130,6 +130,8 @@ public class WaterBudgetGroundWater{
 			double recharge = inHMRechargeValues.get(ID)[0];
 			if (isNovalue(recharge)) recharge= 0;
 			
+			
+			
 
 			double waterStorage=computeS(recharge,initialConditionS_i.get(ID)[0]);
 			double discharge=computeQ(waterStorage);
