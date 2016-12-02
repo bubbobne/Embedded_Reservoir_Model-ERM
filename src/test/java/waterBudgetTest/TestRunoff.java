@@ -66,13 +66,13 @@ public class TestRunoff{
 			waterBudgetRunoff.inRescaledDistance=width_sup;
 			waterBudgetRunoff.pCelerity=2;
 			waterBudgetRunoff.inTopindex=topIndex;
-			waterBudgetRunoff.pSat=90;
+			waterBudgetRunoff.pSat=40;
 			waterBudgetRunoff.inTimestep=timeStepMinutes;
 			waterBudgetRunoff.tStartDate=startDate;
 			waterBudgetRunoff.tEndDate=endDate;
 			waterBudgetRunoff.ID=209;
 			waterBudgetRunoff.alpha=1;
-			waterBudgetRunoff.s_RunoffMax=5.031;
+			waterBudgetRunoff.s_RunoffMax=4.60;
 			
 			JReader.nextRecord();
 			

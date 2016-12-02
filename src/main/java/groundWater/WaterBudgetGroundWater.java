@@ -95,6 +95,10 @@ public class WaterBudgetGroundWater{
 	@Description("The output HashMap with the discharge ")
 	@Out
 	public HashMap<Integer, double[]> outHMDischarge= new HashMap<Integer, double[]>() ;
+	
+	@Description("The output HashMap with the discharge ")
+	@Out
+	public HashMap<Integer, double[]> outHMDischarge_mm= new HashMap<Integer, double[]>() ;
 
 	HashMap<Integer, double[]>initialConditionS_i= new HashMap<Integer, double[]>();
 	int step;
@@ -129,16 +133,14 @@ public class WaterBudgetGroundWater{
 			/**Input data reading*/
 			double recharge = inHMRechargeValues.get(ID)[0];
 			if (isNovalue(recharge)) recharge= 0;
-			
-			
-			
+					
 
 			double waterStorage=computeS(recharge,initialConditionS_i.get(ID)[0]);
-			double discharge=computeQ(waterStorage);
-
+			double discharge_mm=computeQ(waterStorage);
+			double discharge=discharge_mm/1000*A*Math.pow(10, 6)/3600;		
 
 			/** Save the result in  hashmaps for each station*/
-			storeResult_series(ID,waterStorage,discharge);
+			storeResult_series(ID,waterStorage,discharge,discharge_mm);
 			
 			initialConditionS_i.put(ID,new double[]{waterStorage});
 
@@ -195,8 +197,6 @@ public class WaterBudgetGroundWater{
 	public double computeQ(double S_i) throws IOException {
 		model=SimpleDischargeModelFactory.createModel(Q_model, a, S_i, b);
 		double Q=model.dischargeValues();
-		// the discharge is converted from mm3/mm2/h to m3/s
-		Q=Q/1000*A*Math.pow(10, 6)/3600;
 		return Q;
 	}
 
@@ -214,10 +214,12 @@ public class WaterBudgetGroundWater{
 	 * @throws SchemaException the schema exception
 	 */
 	
-	private void storeResult_series(int ID, double waterStorage,double discharge) throws SchemaException {
+	private void storeResult_series(int ID, double waterStorage,double discharge, double discharge_mm)
+									throws SchemaException {
 
 		outHMStorage.put(ID, new double[]{waterStorage});
 		outHMDischarge.put(ID, new double[]{discharge});
+		outHMDischarge_mm.put(ID, new double[]{discharge_mm});
 
 
 	}

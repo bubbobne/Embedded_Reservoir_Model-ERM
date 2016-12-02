@@ -69,11 +69,9 @@ public class TestCanopy{
 			waterBudget.solver_model="dp853";
 			waterBudget.ET_model="AET";
 			// 0<Imax<3
-			waterBudget.Imax=2;
+			waterBudget.Imax=0.0;
 			waterBudget.k=0.463;
-			waterBudget.s_CanopyMax=0.005704;
 			waterBudget.a_c=2;
-			waterBudget.b_c=1;
 
 			
 			JReader.nextRecord();
@@ -141,9 +139,9 @@ public class TestCanopy{
 		reader.file = inPath;
 		reader.idfield = "ID";
 		reader.tStart = startDate;
-		reader.tTimestep = 60*24;
+		reader.tTimestep = 60;
 		reader.tEnd = endDate;
-		reader.fileNovalue = "-9999.0";
+		reader.fileNovalue = "-9999";
 		reader.initProcess();
 		return reader;
 	}

@@ -132,10 +132,17 @@ public class WaterBudgetRunoff{
 	@In
 	public String tEndDate;
 
+	@Description("The output HashMap with the Water Storage  ")
+	@Out
+	public HashMap<Integer, double[]> outHMActualInput= new HashMap<Integer, double[]>() ;
 
 	@Description("The output HashMap with the discharge values")
 	@Out
 	public HashMap<Integer, double[]> outHMDischarge= new HashMap<Integer, double[]>() ;
+	
+	@Description("The output HashMap with the discharge ")
+	@Out
+	public HashMap<Integer, double[]> outHMDischarge_mm= new HashMap<Integer, double[]>() ;
 
 	@Description("The output HashMap with the storage values")
 	@Out
@@ -219,7 +226,6 @@ public class WaterBudgetRunoff{
 		 **/
 		double conversion=(inTimestep==60)?(1000*3600):(1000*3600*24);
 		
-		//System.out.println(alpha);
 
 		/** Computation of the runoff, considering the output of the previous time step */
 		runoff=computeQ(alpha*totalInputFluxes/conversion, runoff);
@@ -235,7 +241,7 @@ public class WaterBudgetRunoff{
 		double ET=computeAET(waterStorage, ETp);
 
 		/** Save the result in  hashmaps for each station*/
-		storeResult_series(ID,waterStorage,Q,ET);
+		storeResult_series(ID,alpha*totalInputFluxes,waterStorage,Q,ET);
 
 		runoff=computeNewVector(runoff,inTimestep);
 
@@ -477,11 +483,15 @@ public class WaterBudgetRunoff{
 	 * @throws SchemaException the schema exception
 	 */
 
-	private void storeResult_series(int ID, double waterStorage,double discharge,
+	private void storeResult_series(int ID, double totalInputFluxes,  double waterStorage,double discharge,
 			double ET) throws SchemaException {
-
+		
+		double discharge_mm=discharge*1000/area*3600;
+		
+		outHMActualInput.put(ID, new double[]{totalInputFluxes});
 		outHMStorage.put(ID, new double[]{waterStorage});
 		outHMDischarge.put(ID, new double[]{discharge});
+		outHMDischarge_mm.put(ID, new double[]{discharge_mm});
 		outHMET.put(ID, new double[]{ET});
 
 

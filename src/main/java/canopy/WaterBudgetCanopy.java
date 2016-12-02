@@ -81,18 +81,12 @@ public class WaterBudgetCanopy{
 	@Description("Throughfall paramter")
 	@In
 	public static double a_c ;
-	
-	
-	
-	@Description("Throughfall paramter")
-	@In
-	public static double b_c ;
 
 
 	@Description("Maximum value of the water storage, needed for the"
 			+ "computation of the Actual EvapoTraspiration")
-	@In
-	@Out
+	//@In
+	//@Out
 	public static double s_CanopyMax;
 
 
@@ -207,13 +201,13 @@ public class WaterBudgetCanopy{
 		/**integration time*/
 		dt=1E-4;
 
-		//Gomez et al. (2001)
-		//s_CanopyMax=1.184+0.49*LAI;
+		//(Brisson et al., 1998):
+		s_CanopyMax=a_c*LAI;
 
 		/** SimpleFactory for the computation of ET, according to the model*/
 		ETmodel=SimpleETModelFactory.createModel(ET_model,S_i,s_CanopyMax,k,LAI);
 		double Tmod=ETp*ETmodel.ETcoefficient();
-
+		
 
 		/** Creation of the differential equation*/
 		FirstOrderDifferentialEquations ode=new waterBudgetODE(rain,computeThroughfall(rain,S_i), Tmod,rootUpTake);			
@@ -237,7 +231,8 @@ public class WaterBudgetCanopy{
 
 
 	public double computeThroughfall(double rain, double S_i) throws IOException {
-		double throughfall=(S_i>Imax)?Math.pow(a_c*S_i,b_c):0;
+		double throughfall=(S_i>Imax)?S_i-s_CanopyMax:0;
+		//System.out.println(throughfall);
 		//double throughfall=rain-Math.min(Imax-S_i, rain);
 		return throughfall;
 	}

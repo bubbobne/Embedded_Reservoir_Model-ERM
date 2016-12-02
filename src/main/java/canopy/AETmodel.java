@@ -13,7 +13,7 @@ public class AETmodel implements ETModel{
 	}
 
 	public double ETcoefficient() {
-		AETcoefficient=S_i/s_max;
+		AETcoefficient=(S_i<s_max)?S_i/s_max:1;
 		return AETcoefficient;
 	}
 

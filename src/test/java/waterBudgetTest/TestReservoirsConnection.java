@@ -151,7 +151,6 @@ public class TestReservoirsConnection{
 			waterBudgetCanopy.k=0.463;
 			waterBudgetCanopy.s_CanopyMax=0.001;
 			waterBudgetCanopy.a_c=2;
-			waterBudgetCanopy.b_c=1;
 		
 			waterBudgetRZ.solver_model="dp853";
 			waterBudgetRZ.UpTake_model="NonLinearReservoir";

@@ -129,6 +129,11 @@ public class WaterBudgetRootZone{
 	UpTakeModel model;
 	ETModel ETModel;
 	
+	
+	@Description("The output HashMap with the Water Storage  ")
+	@Out
+	public HashMap<Integer, double[]> outHMActualInput= new HashMap<Integer, double[]>() ;
+	
 	@Description("The output HashMap with the Water Storage  ")
 	@Out
 	public HashMap<Integer, double[]> outHMStorage= new HashMap<Integer, double[]>() ;
@@ -189,7 +194,7 @@ public class WaterBudgetRootZone{
 			double alpha=(rain==0)?0:alpha(initialConditionS_i.get(ID)[0],rain+snow,s_RootZoneMax);
 			
 			//System.out.println("alpha: "+ alpha);
-			
+
 			
 			double totalInputFluxes=(1-alpha)*(rain+snow);
 			
@@ -208,7 +213,7 @@ public class WaterBudgetRootZone{
 			
 
 			/** Save the result in  hashmaps for each station*/
-			storeResult_series(ID,waterStorage,upTake,evapotranspiration,drainage);
+			storeResult_series(ID,totalInputFluxes,waterStorage,upTake,evapotranspiration,drainage);
 			
 			initialConditionS_i.put(ID,new double[]{waterStorage});
 
@@ -346,9 +351,10 @@ public class WaterBudgetRootZone{
 	 * @throws SchemaException the schema exception
 	 */
 	
-	private void storeResult_series(int ID, double waterStorage,double upTake,
+	private void storeResult_series(int ID, double totalInputFluxes, double waterStorage,double upTake,
 			double evapotranspiration,double drainage) throws SchemaException {
 
+		outHMActualInput.put(ID, new double[]{totalInputFluxes});
 		outHMStorage.put(ID, new double[]{waterStorage});
 		outHMRootUpTake.put(ID, new double[]{upTake});
 		outHMEvaporation.put(ID, new double[]{evapotranspiration});
