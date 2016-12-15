@@ -1,4 +1,4 @@
-package canopy;
+package canopyIN;
 
 public class SimpleETModelFactory {
 

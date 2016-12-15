@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package canopy;
+package canopyOUT;
 
 import org.apache.commons.math3.exception.DimensionMismatchException;
 import org.apache.commons.math3.exception.MaxCountExceededException;
@@ -39,9 +39,8 @@ public class waterBudgetODE implements FirstOrderDifferentialEquations{
 
 	public static double rain;
 
-	public static double transpiration;
+	public static double ETp;
 	
-	public static double rootUpTake;
 
 
 	/**
@@ -51,11 +50,10 @@ public class waterBudgetODE implements FirstOrderDifferentialEquations{
 	 * @param ETmod: the modeled ET value
 	 * @param Qmod: the model Q value
 	 */
-	public waterBudgetODE(double rain, double throughfall, double transpiration, double rootUpTake) {
+	public waterBudgetODE(double rain, double throughfall, double ETp) {
 		this.throughfall=throughfall;
 		this.rain=rain;
-		this.transpiration=transpiration;
-		this.rootUpTake=rootUpTake;
+		this.ETp=ETp;
 
 	}
 	
@@ -71,7 +69,7 @@ public class waterBudgetODE implements FirstOrderDifferentialEquations{
 	 */
 	public void computeDerivatives(double t, double[] y, double[] yDot)
 			throws MaxCountExceededException, DimensionMismatchException {
-		yDot[0] =(rain-throughfall-transpiration+rootUpTake);
+		yDot[0] =(rain-throughfall-ETp);
 		
 
 	

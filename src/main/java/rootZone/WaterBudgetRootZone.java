@@ -78,12 +78,12 @@ public class WaterBudgetRootZone{
 	@Description("Parameter of the non-linear Reservoir model "
 			+ "for the considered layer")
 	@In
-	public double a ;
+	public double a_uptake ;
 
 
 	@Description("Parameter of non-linear reservoir, for the upper layer")
 	@In
-	public double b;
+	public double b_uptake;
 
 	@Description("The maximum storage capacity")
 	@In
@@ -258,7 +258,7 @@ public class WaterBudgetRootZone{
 		/** SimpleFactory for the computation of the UpTake, according to the model*/
 		double upTake=0;
 		if (connectTOcanopy){
-		model=SimpleDischargeModelFactory.createModel(UpTake_model, a, S_i, b);
+		model=SimpleDischargeModelFactory.createModel(UpTake_model, a_uptake, S_i, b_uptake);
 		upTake=model.dischargeValues();
 		} 
 
@@ -303,7 +303,7 @@ public class WaterBudgetRootZone{
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public double computeUpTake( double S_i) throws IOException {
-		model=SimpleDischargeModelFactory.createModel(UpTake_model, a, S_i, b);
+		model=SimpleDischargeModelFactory.createModel(UpTake_model, a_uptake, S_i, b_uptake);
 		double upTake=model.dischargeValues();
 		return upTake;
 	}

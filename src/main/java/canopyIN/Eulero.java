@@ -16,20 +16,21 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package canopy;
+package canopyIN;
 
 import org.apache.commons.math3.ode.FirstOrderDifferentialEquations;
 import org.apache.commons.math3.ode.FirstOrderIntegrator;
 import org.apache.commons.math3.ode.nonstiff.DormandPrince853Integrator;
+import org.apache.commons.math3.ode.nonstiff.EulerIntegrator;
 
 // TODO: Auto-generated Javadoc
 /**
- * The Class Dp853 is the concrete implementation of the SolverOde
- * interface. It implements the Domand Prince 853 solver. The inputs are
+ * The Class Eulero is the concrete implementation of the SolverOde
+ * interface. It implements the Eulero solver. The inputs are
  * the integration time dt, the ODE to be solved and the boundary conditions
  * @author Marialaura Bancheri
  */
-public class Dp853 implements SolverODE{
+public class Eulero implements SolverODE{
 
 	FirstOrderIntegrator integrator;
 
@@ -40,26 +41,24 @@ public class Dp853 implements SolverODE{
 	double y [];
 
 	/**
-	 * Instantiates a new dp853 solver.
+	 * Instantiates a new Eulero solver.
 	 *
 	 * @param dt: the integration time
 	 * @param ode: is the ordinary differential equation to be solved 
 	 * @param y: is a vector with the boundary conditions
 	 */
-	public Dp853(double dt, FirstOrderDifferentialEquations ode,double[] y){
+	public Eulero(double dt, FirstOrderDifferentialEquations ode,double[] y){
 		this.ode=ode;
 		this.y=y;
 		this.dt=dt;
-		this.integrator=new DormandPrince853Integrator(1.0e-8,dt, 1.0e-10, 1.0e-10);
+		this.integrator=new EulerIntegrator(1);
 	}
 
 	/* (non-Javadoc)
 	 * @see waterBudget.SolverODE#integrateValues()
 	 */
 	public double integrateValues() {
-		integrator.integrate(ode, 0.0, y, dt, y);
-		return y[0];
-
+		return integrator.integrate(ode, 0.0, y, dt, y);
 	}
 
 

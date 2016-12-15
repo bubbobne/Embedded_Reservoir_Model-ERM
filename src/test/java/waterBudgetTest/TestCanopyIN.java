@@ -8,10 +8,9 @@ import org.jgrasstools.gears.io.timedependent.OmsTimeSeriesIteratorReader;
 import org.jgrasstools.gears.io.timedependent.OmsTimeSeriesIteratorWriter;
 import org.junit.Test;
 
+import canopyIN.WaterBudgetCanopyIN;
 
-import canopy.WaterBudgetCanopy;
-
-public class TestCanopy{
+public class TestCanopyIN{
 
 	@Test
 	public void testLinear() throws Exception {
@@ -24,24 +23,21 @@ public class TestCanopy{
 
 
 
-		String inPathToPrec = "resources/Input/rainfall.csv";
+		//String inPathToPrec = "resources/Input/rainfall.csv";
 		String inPathToET ="resources/Input/ET.csv";
-		//String inPathToUpTake= "resources/Output/rootZone/UpTake.csv";
+		String inPathToUpTake= "resources/Output/rootZone/UpTake.csv";
 		String inPathToLAI= "resources/Input/LAI.csv";		
 		
 		String pathToS= "resources/Output/canopy/S.csv";
-		String pathTroughfall= "resources/Output/canopy/Throughfall.csv";
 		String pathToET= "resources/Output/canopy/ET.csv";
 
 		
-		OmsTimeSeriesIteratorReader JReader = getTimeseriesReader(inPathToPrec, fId, startDate, endDate, timeStepMinutes);
 		OmsTimeSeriesIteratorReader ETReader = getTimeseriesReader(inPathToET, fId, startDate, endDate, timeStepMinutes);
-		//OmsTimeSeriesIteratorReader UpTakeReader = getTimeseriesReader(inPathToUpTake, fId, startDate, endDate, timeStepMinutes);
+		OmsTimeSeriesIteratorReader UpTakeReader = getTimeseriesReader(inPathToUpTake, fId, startDate, endDate, timeStepMinutes);
 		OmsTimeSeriesIteratorReader LAIReader = getTimeseriesReader(inPathToLAI, fId, startDate, endDate, timeStepMinutes);
 
 		
 		OmsTimeSeriesIteratorWriter writerS = new OmsTimeSeriesIteratorWriter();
-		OmsTimeSeriesIteratorWriter writerThroughfall = new OmsTimeSeriesIteratorWriter();
 		OmsTimeSeriesIteratorWriter writerTranspiration = new OmsTimeSeriesIteratorWriter();
 
 
@@ -50,10 +46,7 @@ public class TestCanopy{
 		writerS.tTimestep = timeStepMinutes;
 		writerS.fileNovalue="-9999";
 		
-		writerThroughfall.file = pathTroughfall;
-		writerThroughfall.tStart = startDate;
-		writerThroughfall.tTimestep = timeStepMinutes;
-		writerThroughfall.fileNovalue="-9999";
+
 		
 		writerTranspiration.file = pathToET;
 		writerTranspiration.tStart = startDate;
@@ -61,25 +54,23 @@ public class TestCanopy{
 		writerTranspiration.fileNovalue="-9999";
 	
 		
-		WaterBudgetCanopy waterBudget= new WaterBudgetCanopy();
+		WaterBudgetCanopyIN waterBudget= new WaterBudgetCanopyIN();
 
 
-		while( JReader.doProcess ) {
+		while( UpTakeReader.doProcess ) {
 		
 			waterBudget.solver_model="dp853";
 			waterBudget.ET_model="AET";
-			// 0<Imax<3
-			waterBudget.Imax=0.0;
 			waterBudget.k=0.463;
-			waterBudget.a_c=2;
+			waterBudget.kc_canopy_in=0.0;
+			//waterBudget.IntialConditionStorage=1.0;
 
 			
-			JReader.nextRecord();
+			UpTakeReader.nextRecord();
 			
-			HashMap<Integer, double[]> id2ValueMap = JReader.outData;
-			waterBudget.inHMRain = id2ValueMap;
+			HashMap<Integer, double[]> id2ValueMap = UpTakeReader.outData;
+			waterBudget.inHMRootUpTake= id2ValueMap;
 			
-
             
             ETReader.nextRecord();
             id2ValueMap = ETReader.outData;
@@ -97,7 +88,6 @@ public class TestCanopy{
             waterBudget.process();
             
             HashMap<Integer, double[]> outHMStorage = waterBudget.outHMStorage;
-            HashMap<Integer, double[]> outHMThoroguhfall = waterBudget.outHMThroughfall;
             HashMap<Integer, double[]> outHMET = waterBudget.outHMTranspiration;
             
             
@@ -108,12 +98,7 @@ public class TestCanopy{
 				writerS.close();
 			}
 			
-			writerThroughfall.inData = outHMThoroguhfall;
-			writerThroughfall.writeNextLine();
-		
-			if (pathTroughfall != null) {
-				writerThroughfall.close();
-			}
+
 			
 			writerTranspiration.inData = outHMET;
 			writerTranspiration.writeNextLine();
@@ -125,7 +110,7 @@ public class TestCanopy{
 			
 
 		}
-		JReader.close();
+
         LAIReader.close();
         ETReader.close();
         //UpTakeReader.close();

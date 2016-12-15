@@ -1,4 +1,4 @@
-package canopy;
+package canopyIN;
 
 public class AETmodel implements ETModel{
 	
