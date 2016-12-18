@@ -25,19 +25,14 @@ import org.apache.commons.math3.ode.FirstOrderDifferentialEquations;
 // TODO: Auto-generated Javadoc
 /**
  * The Class FirstLayer implements the FirstOrderDifferentialEquations interface
- * and solves the water budget equation considering the upper layer in a 
- * model which considers different layers. Inputs are: the
- * precipitation (J), the evapotranspiration (ET), the coefficients of the 
- * non-linear reservoir model (a and b), the maximum value of the soil moisture (s_max),
- * the product of the porosity (n) and the depth of the root zone (Z), the 
- * soil moisture value at the previous time step (S)
+ * and solves the water budget equation.
  * @author Marialaura Bancheri
  */
 public class waterBudgetODE implements FirstOrderDifferentialEquations{
 
 	public static double upTake;
 
-	public static double totalInputFluxes;
+	public static double actualInput;
 
 	public static double ETmod;
 	
@@ -47,17 +42,14 @@ public class waterBudgetODE implements FirstOrderDifferentialEquations{
 	/**
 	 * Instantiates the first layer parameters .
 	 *
-	 * @param nZ: the product of the porosity and the depth of the root zone 
-	 * @param J: precipitation value
-	 * @param a: coefficient of the non-linear reservoir model
-	 * @param b: exponent of the non-linear reservoir model
-	 * @param ET: the ET value
-	 * @param S: the soil moisture value at the previous time step
-	 * @param s_max: the maximum value of the soil moisture 
+	 * @param actualInput: actual input value after the partition
+	 * @param ET: the modeled ET value
+	 * @param uptake: the modeled value of the uptake
+	 * @param Rg : the modeled value of the recharge of the lower layer
 	 */
-	public waterBudgetODE (double totalInputFluxes, double upTake, double ETmod, double Rg) {
+	public waterBudgetODE (double actualInput, double upTake, double ETmod, double Rg) {
 		this.upTake=upTake;
-		this.totalInputFluxes=totalInputFluxes;
+		this.actualInput=actualInput;
 		this.ETmod=ETmod;
 		this.Rg=Rg;
 
@@ -75,7 +67,7 @@ public class waterBudgetODE implements FirstOrderDifferentialEquations{
 	 */
 	public void computeDerivatives(double t, double[] y, double[] yDot)
 			throws MaxCountExceededException, DimensionMismatchException {
-		yDot[0] =(totalInputFluxes-upTake-ETmod-Rg);
+		yDot[0] =(actualInput-upTake-ETmod-Rg);
 		
 
 	

@@ -39,36 +39,43 @@ import java.io.IOException;
 import org.apache.commons.math3.ode.*;
 
 
+/**
+ * The component solves the budget for the inner part of the canopy layer.
+ * Inputs are: the uptake of the roots and the potential evapotranspiration
+ * Outputs are: the storage and the actual ET .
+ */
 
 public class WaterBudgetCanopyIN{
 
 
-	@Description("Input root uptake HM")
+	@Description("Input root uptake hashmap")
 	@In
 	public HashMap<Integer, double[]> inHMRootUpTake;
 
-	@Description("ETp: Potential evaopotranspiration value for the given time considered")
-	double ETp;
 
-	@Description("Input ETp Hashmap")
+	@Description("Input potential evapotranspiration Hashmap")
 	@In
 	public HashMap<Integer, double[]> inHMETp;
+	
+	@Description("ETp: Potential evapotranspiration value for the given time considered")
+	double ETp;
+	
+	@Description("ET model: AET,LAI")
+	@In
+	public String ET_model;
+	
+	ETModel ETmodel;
 
-
+	
 	@Description("Leaf Area Index")
 	@In
 	public  HashMap<Integer, double[]> inHMLAI;
 
-
-	@Description("Integration time")
-	double dt ;
-
-
-	@Description("SCF parameter")
+	@Description("SCF parameter in case of AET simulated with LAI")
 	@In
 	public static double k ;
 
-	@Description("crop coefficient canopy out")
+	@Description("crop coefficient canopy in")
 	@In
 	public static double kc_canopy_in;
 
@@ -76,20 +83,9 @@ public class WaterBudgetCanopyIN{
 	@In
 	public static double IntialConditionStorage;
 
-
-	@Description("ET model: AET,LAI")
-	@In
-	public String ET_model;
-
-	@Description("ODE solver ")
+	@Description("ODE solver model: dp853, Eulero ")
 	@In
 	public String solver_model;
-
-	@Description("Simluted value of AET"
-			+ "at a given time step")
-	double AET;
-
-	ETModel ETmodel;
 
 
 	@Description("The output HashMap with the Water Storage  ")
@@ -98,12 +94,14 @@ public class WaterBudgetCanopyIN{
 
 	@Description("The output HashMap with the AET ")
 	@Out
-	public HashMap<Integer, double[]> outHMTranspiration = new HashMap<Integer, double[]>() ;
+	public HashMap<Integer, double[]> outHMAET= new HashMap<Integer, double[]>() ;
 
 
 	HashMap<Integer, double[]>initialConditionS_i= new HashMap<Integer, double[]>();
 	int step;
 
+	@Description("Integration time")
+	double dt=1E-4; ;
 
 
 
@@ -152,6 +150,7 @@ public class WaterBudgetCanopyIN{
 			/** Save the result in  hashmaps for each station*/
 			storeResult_series(ID,waterStorage,evapotranspiration);
 
+			/** Updates the initial conditions for the following time step*/
 			initialConditionS_i.put(ID,new double[]{waterStorage});
 
 		}
@@ -164,26 +163,24 @@ public class WaterBudgetCanopyIN{
 	/**
 	 * Compute the water storage
 	 *
-	 * @param J: input rain 
-	 * @param Qinput : input discharge
-	 * @param ET: input potential ET
+	 * @param rootUpTake: root uptake
+	 * @param S_i : initial condition
+	 * @param LAI: leaf area index
 	 * @return the water storage, according to the model and the layer
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public double computeS(double rootUpTake, double S_i,  double LAI) throws IOException {
-		/**integration time*/
-		dt=1E-4;
 
 		//(Brisson et al., 1998):
 		double s_CanopyMax=kc_canopy_in*LAI;
 
 		/** SimpleFactory for the computation of ET, according to the model*/
 		ETmodel=SimpleETModelFactory.createModel(ET_model,S_i,s_CanopyMax,k,LAI);
-		double Tmod=ETp*ETmodel.ETcoefficient();
+		double AETmod=ETp*ETmodel.ETcoefficient();
 
 
 		/** Creation of the differential equation*/
-		FirstOrderDifferentialEquations ode=new waterBudgetODE(rootUpTake, Tmod);			
+		FirstOrderDifferentialEquations ode=new waterBudgetODE(rootUpTake, AETmod);			
 
 		/** Boundaries conditions*/
 		double[] y = new double[] { S_i, 0 };
@@ -192,8 +189,7 @@ public class WaterBudgetCanopyIN{
 		SolverODE solver;
 		solver=SimpleIntegratorFactory.createSolver(solver_model, dt, ode, y);
 
-		/** result of the resolution of the ODE, if nZ=1, S_i=S_t
-		 * and setting of the new initial condition (S_i)*/
+		/** result of the resolution of the ODE*/
 		S_i=solver.integrateValues();
 
 		/** Check of the Storage values: they cannot be negative*/
@@ -206,15 +202,16 @@ public class WaterBudgetCanopyIN{
 	/**
 	 * Compute the AET
 	 *
-	 * @param ETinput: the input potential ET
-	 * @return the double value od the AET
+	 * @param S_i: storage at the considered time step
+	 * @param LAI: leaf area index
+	 * @return the double value of the AET
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public double computeAET(double S_i,double LAI) throws IOException {
 		/** SimpleFactory for the computation of ET, according to the model*/
 		ETmodel=SimpleETModelFactory.createModel(ET_model,S_i,kc_canopy_in*LAI,k,LAI);
-		double Tmod=ETp*ETmodel.ETcoefficient();
-		return Tmod;
+		double AETmod=ETp*ETmodel.ETcoefficient();
+		return AETmod;
 	}
 
 
@@ -224,7 +221,6 @@ public class WaterBudgetCanopyIN{
 	 * Store of the results in hashmaps 
 	 *
 	 * @param waterStorage is the water storage
-	 * @param discharge is the discharge
 	 * @param evapotranspiration is the evapotranspiration
 	 * @throws SchemaException the schema exception
 	 */
@@ -232,7 +228,7 @@ public class WaterBudgetCanopyIN{
 	private void storeResult_series(int ID, double waterStorage,double evapotranspiration) throws SchemaException {
 
 		outHMStorage.put(ID, new double[]{waterStorage});
-		outHMTranspiration.put(ID, new double[]{evapotranspiration});
+		outHMAET.put(ID, new double[]{evapotranspiration});
 
 	}
 

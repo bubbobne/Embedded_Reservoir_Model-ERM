@@ -11,25 +11,25 @@ public class WFIUHKinematic {
 
 	/** The width function */
 	double [][] widthFunction;
-	
-	/** The total fluxes in input (rain+snow) */
-	double totalInputFluxes;
-	
+
+	/** The  fluxes in input  */
+	double inputFluxes;
+
 	/** The input time step in minutes */
 	int inTimestep;
-	
+
 	/** The area. */
 	double area;
-	
+
 	/** The celerity of the channel */
 	double pCelerity;
-	
-	/** The vector with discharge values at prevoius time step */
+
+	/** The vector with discharge values at previous time step */
 	double [] Q_i;
-	
-	/** The lenght of the input time series */
+
+	/** The length of the input time series */
 	int dim;
-	
+
 	/** The actual step. */
 	int step;
 
@@ -37,7 +37,7 @@ public class WFIUHKinematic {
 	 * Instantiates a new IUH kinematic.
 	 *
 	 * @param widthFunction is the width function matrix
-	 * @param totalInputFluxes are the totalInputFluxes for the time step
+	 * @param inputFluxes are the totalInputFluxes for the time step
 	 * @param inTimestep is the input time step in minutes
 	 * @param area is the area
 	 * @param pCelerity is the celerity of the channel
@@ -45,9 +45,9 @@ public class WFIUHKinematic {
 	 * @param dim is the length of the input time series
 	 * @param step the actual computation step
 	 */
-	public WFIUHKinematic(double [][] widthFunction, double totalInputFluxes, int inTimestep, 
-							double area, double pCelerity, double [] Q_i, int dim, int step){
-		this.totalInputFluxes=totalInputFluxes;
+	public WFIUHKinematic(double [][] widthFunction, double inputFluxes, int inTimestep, 
+			double area, double pCelerity, double [] Q_i, int dim, int step){
+		this.inputFluxes=inputFluxes;
 		this.widthFunction=widthFunction;
 		this.inTimestep=inTimestep;
 		this.area=area;
@@ -78,16 +78,16 @@ public class WFIUHKinematic {
 
 			if (t <= tpmax) {
 
-				Q_i1[t]=(double) (totalInputFluxes * area* ModelsEngine.width_interpolate(widthFunction, t*60, 0, 2))*pCelerity;
+				Q_i1[t]=(double) (inputFluxes * area* ModelsEngine.width_interpolate(widthFunction, t*60, 0, 2))*pCelerity;
 
 			} else {
-				Q_i1[t]= (double) (totalInputFluxes * area* (ModelsEngine.width_interpolate(widthFunction, t*60, 0, 2) - ModelsEngine
+				Q_i1[t]= (double) (inputFluxes * area* (ModelsEngine.width_interpolate(widthFunction, t*60, 0, 2) - ModelsEngine
 						.width_interpolate(widthFunction, t*60 - tpmax, 0, 2)))*pCelerity;
 			}
 		}
 
 		// is the average discharge in m^3/s over 60 minutes 
-		 //double [] Q=computeMean(Q_i1);
+		//double [] Q=computeMean(Q_i1);
 
 
 		// sum of the different contributes of the discharge (previous time step and actual time step)
@@ -109,11 +109,13 @@ public class WFIUHKinematic {
 	 * @param runoff is the runoff computed each second with the WFIUH
 	 * @return the double[] vector of the average runoff in a minute
 	 */
+
+	/**
 	public double [] computeMean (double [] runoff){
 
 		int step=60;
 
-	
+
 		double [] sum=new double [(runoff.length/step)];
 
 		for(int t=0; t<sum.length;t++){
@@ -125,6 +127,7 @@ public class WFIUHKinematic {
 
 		return sum;
 
-	}
 
+	}
+	 */
 }

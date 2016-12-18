@@ -88,7 +88,7 @@ public class TestCanopyIN{
             waterBudget.process();
             
             HashMap<Integer, double[]> outHMStorage = waterBudget.outHMStorage;
-            HashMap<Integer, double[]> outHMET = waterBudget.outHMTranspiration;
+            HashMap<Integer, double[]> outHMET = waterBudget.outHMAET;
             
             
 			writerS.inData = outHMStorage ;

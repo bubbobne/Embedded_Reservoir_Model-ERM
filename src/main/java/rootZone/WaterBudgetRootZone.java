@@ -42,15 +42,8 @@ import org.apache.commons.math3.ode.*;
 
 
 /**
- * The Class WaterBudget solves the water budget equation, according to
- * the models chosen for the simulation of the discharge and of the AET. 
- * The outputs of the class are 4 hashmaps with the water storage values,
- * simulated discharge values, simulated AET and the quick discharge (if there
- * is any). The simulated discharge is partitioned in two flows: a flow which drains
- * to the lower layer and the quick discharge.
- * For the lower layer, we don't have nor ET processes and the 
- * partitioning of the discharge in quick and drainage to other layers, so the third and
- * fourth columns of the first hashmap and the second hashmap will be equal to zero.
+ * The Class WaterBudget solves the water budget equation for the root zone layer.
+ * 
  * @author Marialaura Bancheri
  */
 public class WaterBudgetRootZone{
@@ -60,28 +53,23 @@ public class WaterBudgetRootZone{
 	@In
 	public HashMap<Integer, double[]> inHMRain;
 	
-	
-	@Description("Input rain Hashmap")
-	@In
-	public HashMap<Integer, double[]> inHMSnow;
-
 
 	@Description("Input ET Hashmap")
 	@In
 	public HashMap<Integer, double[]> inHMETp;
+	
+	@Description("ET model: AET")
+	@In
+	public String ET_model;
+	ETModel ETModel;
 
 
-	@Description("Integration time")
-	double dt ;
-
-
-	@Description("Parameter of the non-linear Reservoir model "
-			+ "for the considered layer")
+	@Description("Coefficient of the non-linear Reservoir model")
 	@In
 	public double a_uptake ;
 
 
-	@Description("Parameter of non-linear reservoir, for the upper layer")
+	@Description("Exponent of non-linear reservoir")
 	@In
 	public double b_uptake;
 
@@ -93,13 +81,12 @@ public class WaterBudgetRootZone{
 	@In
 	public double Pmax;
 	
-	@Unit("-")
+	@Description("Degree of spatial variability of the soil moisture capacity")
 	@In
   	public Double pB;
 	
 	
-	@Description("partitioning coefficient between the reserovir")
-	@Unit("-")
+	@Description("partitioning coefficient between the root zone and the runoff reservoirs")
 	@Out
 	public double alpha;
 
@@ -109,28 +96,27 @@ public class WaterBudgetRootZone{
 	@In
 	public double s_RootZoneMax;
 	
-	@Description("")
+	@Description("Flag to allow the cnnection to the canopy")
 	@In
 	public boolean connectTOcanopy;
 	
 	
-	@Description("Discharge model: NonLinearReservoir, Clapp-H")
+	@Description("Uptake model: NonLinearReservoir, Clapp-H")
 	@In
 	public String UpTake_model;
+	UpTakeModel model;
 
-	@Description("ET model: AET")
-	@In
-	public String ET_model;
 
-	@Description("ODE solver ")
+	@Description("ODE solver model: dp853, Eulero")
 	@In
 	public String solver_model;
-
-	UpTakeModel model;
-	ETModel ETModel;
+	
+	@Description("Initial condition storage")
+	@In
+	public static double IntialConditionStorage;
 	
 	
-	@Description("The output HashMap with the Water Storage  ")
+	@Description("The HashMap with the Actual input of the layer ")
 	@Out
 	public HashMap<Integer, double[]> outHMActualInput= new HashMap<Integer, double[]>() ;
 	
@@ -138,7 +124,7 @@ public class WaterBudgetRootZone{
 	@Out
 	public HashMap<Integer, double[]> outHMStorage= new HashMap<Integer, double[]>() ;
 
-	@Description("The output HashMap with the discharge ")
+	@Description("The output HashMap with the root uptake ")
 	@Out
 	public HashMap<Integer, double[]> outHMRootUpTake= new HashMap<Integer, double[]>() ;
 
@@ -147,13 +133,16 @@ public class WaterBudgetRootZone{
 	public HashMap<Integer, double[]> outHMEvaporation = new HashMap<Integer, double[]>() ;
 
 
-	@Description("The output HashMap with the outflow "
-			+ "which drains to the lower layer")
+	@Description("The output HashMap with the outflow which drains to the lower layer")
 	@Out
 	public HashMap<Integer, double[]> outHMR= new HashMap<Integer, double[]>() ;
 
 	HashMap<Integer, double[]>initialConditionS_i= new HashMap<Integer, double[]>();
 	int step;
+
+	@Description("Integration time")
+	double dt ;
+
 
     
     
@@ -175,7 +164,7 @@ public class WaterBudgetRootZone{
 		if(step==0){
 			for (Entry<Integer, double[]> entry : entrySet){
 				Integer ID = entry.getKey();
-				initialConditionS_i.put(ID,new double[]{0.0});
+				initialConditionS_i.put(ID,new double[]{IntialConditionStorage});
 			}
 		}
 
@@ -187,23 +176,20 @@ public class WaterBudgetRootZone{
 			double rain = inHMRain.get(ID)[0];
 			if (isNovalue(rain)) rain= 0;
 			
-			double snow = 0;					
-			if (inHMSnow != null) snow=inHMSnow.get(ID)[0];
-			if (isNovalue(snow)) snow= 0;
 
-			double alpha=(rain==0)?0:alpha(initialConditionS_i.get(ID)[0],rain+snow,s_RootZoneMax);
+			double alpha=(rain==0)?0:alpha(initialConditionS_i.get(ID)[0],rain,s_RootZoneMax);
 			
 			//System.out.println("alpha: "+ alpha);
 
 			
-			double totalInputFluxes=(1-alpha)*(rain+snow);
+			double actualInput=(1-alpha)*rain;
 			
 
 			double ETp=0;
 			if (inHMETp != null) ETp = inHMETp.get(ID)[0];
 			if (isNovalue(ETp)) ETp= 0;
 
-			double waterStorage=computeS(totalInputFluxes,initialConditionS_i.get(ID)[0], ETp);
+			double waterStorage=computeS(actualInput,initialConditionS_i.get(ID)[0], ETp);
 			
 			double upTake=(connectTOcanopy)?computeUpTake(waterStorage):0;
 			double evapotranspiration=computeAET(waterStorage, ETp);
@@ -213,7 +199,7 @@ public class WaterBudgetRootZone{
 			
 
 			/** Save the result in  hashmaps for each station*/
-			storeResult_series(ID,totalInputFluxes,waterStorage,upTake,evapotranspiration,drainage);
+			storeResult_series(ID,actualInput,waterStorage,upTake,evapotranspiration,drainage);
 			
 			initialConditionS_i.put(ID,new double[]{waterStorage});
 
@@ -224,10 +210,15 @@ public class WaterBudgetRootZone{
 
 	}
 	
+	/**
+	 * Compute alpha according to the Hymod model
+	 *
+	 * @return the double value of alpha
+	 */
 	
-	private double alpha( double S_rz, double Pval, double S_max) {
+	private double alpha( double S_i, double Pval, double S_max) {
  		//double pCmax=S_max *(pB+1);
- 		double coeff1 = ((1.0 - ((pB + 1.0) * (S_rz) / pCmax)));
+ 		double coeff1 = ((1.0 - ((pB + 1.0) * (S_i) / pCmax)));
  		double exp = 1.0 / (pB + 1.0);
  		double ct_prev = pCmax * (1.0 - Math.pow(coeff1, exp));
  		double UT1 = Math.max((Pval - pCmax + ct_prev), 0.0);
@@ -236,7 +227,7 @@ public class WaterBudgetRootZone{
         double coeff2 = (1.0 - dummy);
         double exp2 = (pB + 1.0);
         double xn = (pCmax / (pB + 1.0)) * (1.0 - (Math.pow(coeff2, exp2)));
-        double UT2 = Math.max(Pval- UT1 - (xn - S_rz), 0);
+        double UT2 = Math.max(Pval- UT1 - (xn - S_i), 0);
  		return alpha=(UT1+UT2)/Pval;
  	}
 
@@ -245,13 +236,13 @@ public class WaterBudgetRootZone{
 	/**
 	 * Compute the water storage
 	 *
-	 * @param J: input rain 
-	 * @param Qinput : input discharge
-	 * @param ET: input potential ET
+	 * @param actualInput: input fluxes  
+	 * @param S_i is the initial condition of the storage
+	 * @param ETp: input potential ET
 	 * @return the water storage, according to the model and the layer
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public double computeS(double totalInputFluxes, double S_i, double ETp) throws IOException {
+	public double computeS(double actualInput, double S_i, double ETp) throws IOException {
 		/**integration time*/
 		dt=1E-4;
 
@@ -268,10 +259,9 @@ public class WaterBudgetRootZone{
 		
 		
 		double Rg=Pmax*S_i/s_RootZoneMax;
-		//double Rg=Pmax*S_i;
 
 		/** Creation of the differential equation*/
-		FirstOrderDifferentialEquations ode=new waterBudgetODE(totalInputFluxes,upTake, Emod, Rg);			
+		FirstOrderDifferentialEquations ode=new waterBudgetODE(actualInput,upTake, Emod, Rg);			
 
 		/** Boundaries conditions*/
 		double[] y = new double[] { S_i, 0 };
@@ -280,8 +270,7 @@ public class WaterBudgetRootZone{
 		SolverODE solver;
 		solver=SimpleIntegratorFactory.createSolver(solver_model, dt, ode, y);
 
-		/** result of the resolution of the ODE, if nZ=1, S_i=S_t
-		 * and setting of the new initial condition (S_i)*/
+		/** result of the resolution of the ODE*/
 		S_i=solver.integrateValues();
 
 		/** Check of the Storage values: they cannot be negative*/
@@ -290,16 +279,11 @@ public class WaterBudgetRootZone{
 		return S_i;
 	}
 
-	// computation of the discharge according to the mode: 
-	// mode external --> external value
-	// else --> model
+
 	/**
-	 * Compute computation of the discharge according to the mode:
-	 * mode external --> external value
-	 * else --> non-linear reservoir model
-	 *
-	 * @param Qinput: input discharge value
-	 * @return the double value of the simulated discharge
+	 * Compute computation of the uptake according to the model
+	 * @param S_i: the actual storage value
+	 * @return the double value of the simulated uptake
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public double computeUpTake( double S_i) throws IOException {
@@ -312,12 +296,11 @@ public class WaterBudgetRootZone{
 	/**
 	 * Compute the outflow toward the lower layer
 	 *
-	 * @param Q: simulated discharge for the considered layer
+     * @param S_i: the actual storage value
 	 * @return the double value of the outflow toward the lower layer
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public double computeR(double S_i) throws IOException {
-		//double Rg=Pmax*S_i;
 		double Rg=Pmax*S_i/s_RootZoneMax;
 		return Rg;
 	}
@@ -325,9 +308,9 @@ public class WaterBudgetRootZone{
 
 	/**
 	 * Compute the AET
-	 *
+	 * @param S_i: the actual storage value
 	 * @param ETinput: the input potential ET
-	 * @return the double value od the AET
+	 * @return the double value of the AET
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public double computeAET(double S_i, double ETp) throws IOException {
@@ -344,17 +327,17 @@ public class WaterBudgetRootZone{
 	 * Store of the results in hashmaps 
 	 *
 	 * @param waterStorage is the water storage
-	 * @param discharge is the discharge
+	 * @param uptake is the uptake
 	 * @param evapotranspiration is the evapotranspiration
-	 * @param quickRunoff is the water quick runoff from the layer
+	 * @param totalInputFluxes are the input of the layer after the partition
 	 * @param drainage is drainage toward the lower layer
 	 * @throws SchemaException the schema exception
 	 */
 	
-	private void storeResult_series(int ID, double totalInputFluxes, double waterStorage,double upTake,
+	private void storeResult_series(int ID, double actualInput, double waterStorage,double upTake,
 			double evapotranspiration,double drainage) throws SchemaException {
 
-		outHMActualInput.put(ID, new double[]{totalInputFluxes});
+		outHMActualInput.put(ID, new double[]{actualInput});
 		outHMStorage.put(ID, new double[]{waterStorage});
 		outHMRootUpTake.put(ID, new double[]{upTake});
 		outHMEvaporation.put(ID, new double[]{evapotranspiration});

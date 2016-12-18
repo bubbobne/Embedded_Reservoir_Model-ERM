@@ -69,12 +69,13 @@ public class TestRootZone{
 			waterBudget.solver_model="dp853";
 			waterBudget.UpTake_model="NonLinearReservoir";
 			waterBudget.ET_model="AET";
-			waterBudget.a_uptake=752.3543670;
+			waterBudget.a_uptake=75.3543670;
 			waterBudget.b_uptake=1;
-			waterBudget.s_RootZoneMax=0.005704;
-			waterBudget.Pmax=10;
-			waterBudget.pB=2.5;
-			waterBudget.pCmax=12;
+			waterBudget.s_RootZoneMax=0.006681;
+			waterBudget.Pmax=70.799563;
+			waterBudget.pB=2.08;
+			waterBudget.pCmax=4.049;
+			waterBudget.connectTOcanopy=true;
 
 			
 			JReader.nextRecord();

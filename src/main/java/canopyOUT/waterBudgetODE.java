@@ -25,12 +25,7 @@ import org.apache.commons.math3.ode.FirstOrderDifferentialEquations;
 // TODO: Auto-generated Javadoc
 /**
  * The Class FirstLayer implements the FirstOrderDifferentialEquations interface
- * and solves the water budget equation considering the upper layer in a 
- * model which considers different layers. Inputs are: the
- * precipitation (J), the evapotranspiration (ET), the coefficients of the 
- * non-linear reservoir model (a and b), the maximum value of the soil moisture (s_max),
- * the product of the porosity (n) and the depth of the root zone (Z), the 
- * soil moisture value at the previous time step (S)
+ * and solves the water budget equation .
  * @author Marialaura Bancheri
  */
 public class waterBudgetODE implements FirstOrderDifferentialEquations{
@@ -47,8 +42,8 @@ public class waterBudgetODE implements FirstOrderDifferentialEquations{
 	 * Instantiates the first layer parameters .
 	 *
 	 * @param rain: precipitation value
-	 * @param ETmod: the modeled ET value
-	 * @param Qmod: the model Q value
+	 * @param ETp: the modeled ET value
+	 * @param throughfall: the modeled throughfall value
 	 */
 	public waterBudgetODE(double rain, double throughfall, double ETp) {
 		this.throughfall=throughfall;

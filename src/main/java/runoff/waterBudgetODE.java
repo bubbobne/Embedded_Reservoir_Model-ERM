@@ -25,37 +25,26 @@ import org.apache.commons.math3.ode.FirstOrderDifferentialEquations;
 // TODO: Auto-generated Javadoc
 /**
  * The Class FirstLayer implements the FirstOrderDifferentialEquations interface
- * and solves the water budget equation considering the upper layer in a 
- * model which considers different layers. Inputs are: the
- * precipitation (J), the evapotranspiration (ET), the coefficients of the 
- * non-linear reservoir model (a and b), the maximum value of the soil moisture (s_max),
- * the product of the porosity (n) and the depth of the root zone (Z), the 
- * soil moisture value at the previous time step (S)
+ * and solves the water budget equation.
  * @author Marialaura Bancheri
  */
 public class waterBudgetODE implements FirstOrderDifferentialEquations{
 
-	public static double Qmod;
-	public static double Emod;
-
-
-	public static double totalInputFluxes;
+	public static double Q;
+	public static double AET;
+	public static double inputFluxes;
 
 	/**
 	 * Instantiates the first layer parameters .
 	 *
-	 * @param nZ: the product of the porosity and the depth of the root zone 
-	 * @param J: precipitation value
-	 * @param a: coefficient of the non-linear reservoir model
-	 * @param b: exponent of the non-linear reservoir model
-	 * @param ET: the ET value
-	 * @param S: the soil moisture value at the previous time step
-	 * @param s_max: the maximum value of the soil moisture 
+	 * @param Q: discharge value
+	 * @param inputFluxes: input fluxes value
+	 * @param AET: the AET value
 	 */
-	public waterBudgetODE(double totalInputFluxes, double Qmod, double Emod) {
-		this.Qmod=Qmod;
-		this.totalInputFluxes=totalInputFluxes;
-		this.Emod=Emod;
+	public waterBudgetODE(double inputFluxes, double Q, double AET) {
+		this.Q=Q;
+		this.inputFluxes=inputFluxes;
+		this.AET=AET;
 
 	}
 	
@@ -71,7 +60,7 @@ public class waterBudgetODE implements FirstOrderDifferentialEquations{
 	 */
 	public void computeDerivatives(double t, double[] y, double[] yDot)
 			throws MaxCountExceededException, DimensionMismatchException {
-		yDot[0] =totalInputFluxes-Qmod-Emod;
+		yDot[0] =inputFluxes-Q-AET;
 		
 
 	

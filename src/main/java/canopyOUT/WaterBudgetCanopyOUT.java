@@ -38,6 +38,11 @@ import java.io.IOException;
 
 import org.apache.commons.math3.ode.*;
 
+/**
+ * The component solves the budget for the outer part of the canopy layer.
+ * Inputs are: the rain and the potential evapotranspiration
+ * Outputs are: the storage and the throughfall.
+ */
 
 
 public class WaterBudgetCanopyOUT{
@@ -47,22 +52,17 @@ public class WaterBudgetCanopyOUT{
 	@In
 	public HashMap<Integer, double[]> inHMRain;
 
-
-	@Description("ETp: Potential evaopotranspiration value for the given time considered")
-	double ETp;
-
 	@Description("Input ETp Hashmap")
 	@In
 	public HashMap<Integer, double[]> inHMETp;
+	
+	@Description("ETp: Potential evaopotranspiration value for the given time considered")
+	double ETp;
 
 	
-	@Description("Leaf Area Index")
+	@Description("Leaf Area Index Hashmap")
 	@In
 	public  HashMap<Integer, double[]> inHMLAI;
-
-
-	@Description("Integration time")
-	double dt ;
 
 	
 	@Description("crop coefficient canopy out")
@@ -74,7 +74,7 @@ public class WaterBudgetCanopyOUT{
 	public static double IntialConditionStorage;
 
 	
-	@Description("ODE solver ")
+	@Description("ODE solver model:dp853, Eulero ")
 	@In
 	public String solver_model;
 
@@ -82,12 +82,14 @@ public class WaterBudgetCanopyOUT{
 	@Out
 	public HashMap<Integer, double[]> outHMStorage= new HashMap<Integer, double[]>() ;
 
-	@Description("The output HashMap with the discharge ")
+	@Description("The output HashMap with the Throughfall ")
 	@Out
 	public HashMap<Integer, double[]> outHMThroughfall= new HashMap<Integer, double[]>() ;
 
 	HashMap<Integer, double[]>initialConditionS_i= new HashMap<Integer, double[]>();
 	int step;
+	@Description("Integration time")
+	double dt=1E-4; ;
 
 
 
@@ -149,16 +151,13 @@ public class WaterBudgetCanopyOUT{
 	/**
 	 * Compute the water storage
 	 *
-	 * @param J: input rain 
-	 * @param Qinput : input discharge
-	 * @param ET: input potential ET
+	 * @param rain: input rain 
+	 * @param S_i : initial condition
+	 * @param LAI: leaf area index
 	 * @return the water storage, according to the model and the layer
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public double computeS(double rain, double S_i, double LAI) throws IOException {
-		/**integration time*/
-		dt=1E-4;
-
 
 		/** Creation of the differential equation*/
 		FirstOrderDifferentialEquations ode=new waterBudgetODE(rain,computeThroughfall(rain,S_i,LAI), ETp);			
@@ -179,12 +178,21 @@ public class WaterBudgetCanopyOUT{
 		return S_i;
 	}
 
+	/**
+	 * Compute the Throughfall
+	 *
+	 * @param rain: input rain 
+	 * @param S_i : initial condition
+	 * @param LAI: leaf area index
+	 * @throws SchemaException the schema exception
+	 */
 
 	public double computeThroughfall(double rain, double S_i, double LAI) throws IOException {
 		//(Brisson et al., 1998):
 		double s_CanopyMax=kc_canopy_out*LAI;
 		double throughfall=(S_i>s_CanopyMax)?S_i-s_CanopyMax:0;
-		//System.out.println(throughfall);
+		
+		//Hracowitz 2016 model
 		//double throughfall=rain-Math.min(Imax-S_i, rain);
 		return throughfall;
 	}
@@ -194,7 +202,7 @@ public class WaterBudgetCanopyOUT{
 	 * Store of the results in hashmaps 
 	 *
 	 * @param waterStorage is the water storage
-	 * @param discharge is the discharge
+	 * @param throughfall is the throughfall
 	 * @throws SchemaException the schema exception
 	 */
 

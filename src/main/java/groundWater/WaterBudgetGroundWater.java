@@ -38,36 +38,26 @@ import org.apache.commons.math3.ode.*;
 
 
 /**
- * The Class WaterBudget solves the water budget equation, according to
- * the models chosen for the simulation of the discharge and of the AET. 
- * The outputs of the class are 4 hashmaps with the water storage values,
- * simulated discharge values, simulated AET and the quick discharge (if there
- * is any). The simulated discharge is partitioned in two flows: a flow which drains
- * to the lower layer and the quick discharge.
- * For the lower layer, we don't have nor ET processes and the 
- * partitioning of the discharge in quick and drainage to other layers, so the third and
- * fourth columns of the first hashmap and the second hashmap will be equal to zero.
+ * The Class WaterBudget solves the water budget equation for the groudwater layer.
+ * The input s the recharge from the root zone and the output is the discharge, 
+ * modeled with a non linear reservoir model.
+ * 
  * @author Marialaura Bancheri
  */
 public class WaterBudgetGroundWater{
 
 
-	@Description("Input rain Hashmap")
+	@Description("Input recharge Hashmap")
 	@In
 	public HashMap<Integer, double[]> inHMRechargeValues;
-	
-
-	@Description("Integration time")
-	double dt ;
 
 
-	@Description("Parameter of the non-linear Reservoir model "
-			+ "for the considered layer")
+	@Description("Coefficient of the non-linear Reservoir model ")
 	@In
 	public static double a ;
 
 
-	@Description("Parameter of non-linear reservoir, for the upper layer")
+	@Description("Exponent of non-linear reservoir")
 	@In
 	public static double b;
 
@@ -80,30 +70,38 @@ public class WaterBudgetGroundWater{
 	@In
 	public String Q_model;
 
-
-	@Description("ODE solver ")
-	@In
-	public String solver_model;
-
 	DischargeModel model;
 
+
+	@Description("ODE solver model: dp853, Eulero ")
+	@In
+	public String solver_model;
 	
-	@Description("The output HashMap with the Water Storage  ")
+	@Description("Initial condition storage")
+	@In
+	public static double IntialConditionStorage;
+
+
+	@Description("The output HashMap with the Water Storage")
 	@Out
 	public HashMap<Integer, double[]> outHMStorage= new HashMap<Integer, double[]>() ;
 
-	@Description("The output HashMap with the discharge ")
+	@Description("The output HashMap with the discharge")
 	@Out
 	public HashMap<Integer, double[]> outHMDischarge= new HashMap<Integer, double[]>() ;
-	
-	@Description("The output HashMap with the discharge ")
+
+	@Description("The output HashMap with the discharge in mm")
 	@Out
 	public HashMap<Integer, double[]> outHMDischarge_mm= new HashMap<Integer, double[]>() ;
 
 	HashMap<Integer, double[]>initialConditionS_i= new HashMap<Integer, double[]>();
 	int step;
-	
-    
+
+	@Description("Integration time")
+	double dt=1E-4;
+
+
+
 
 	/**
 	 * Process: reading of the data, computation of the
@@ -114,15 +112,15 @@ public class WaterBudgetGroundWater{
 	@Execute
 	public void process() throws Exception {
 		//checkNull(inHMRechargeValues);
-		
-       
+
+
 		// reading the ID of all the stations 
 		Set<Entry<Integer, double[]>> entrySet = inHMRechargeValues.entrySet();
 
 		if(step==0){
 			for (Entry<Integer, double[]> entry : entrySet){
 				Integer ID = entry.getKey();
-				initialConditionS_i.put(ID,new double[]{0.0});
+				initialConditionS_i.put(ID,new double[]{IntialConditionStorage});
 			}
 		}
 
@@ -133,7 +131,7 @@ public class WaterBudgetGroundWater{
 			/**Input data reading*/
 			double recharge = inHMRechargeValues.get(ID)[0];
 			if (isNovalue(recharge)) recharge= 0;
-					
+
 
 			double waterStorage=computeS(recharge,initialConditionS_i.get(ID)[0]);
 			double discharge_mm=computeQ(waterStorage);
@@ -141,7 +139,7 @@ public class WaterBudgetGroundWater{
 
 			/** Save the result in  hashmaps for each station*/
 			storeResult_series(ID,waterStorage,discharge,discharge_mm);
-			
+
 			initialConditionS_i.put(ID,new double[]{waterStorage});
 
 		}
@@ -154,13 +152,12 @@ public class WaterBudgetGroundWater{
 	/**
 	 * Compute the water storage
 	 *
-	 * @param J: input rain 
+	 * @param totalInputFluxes: input total input fluxes
+	 * @param the initial condition of the storage
 	 * @return the water storage, according to the model and the layer
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public double computeS(double totalInputFluxes, double S_i) throws IOException {
-		/**integration time*/
-		dt=1E-4;
+	public double computeS(double recharge, double S_i) throws IOException {
 
 		/** SimpleFactory for the computation of Q, according to the model*/
 		model=SimpleDischargeModelFactory.createModel(Q_model, a, S_i, b);
@@ -168,7 +165,7 @@ public class WaterBudgetGroundWater{
 
 
 		/** Creation of the differential equation*/
-		FirstOrderDifferentialEquations ode=new waterBudgetODE(totalInputFluxes,Qmod);			
+		FirstOrderDifferentialEquations ode=new waterBudgetODE(recharge,Qmod);			
 
 		/** Boundaries conditions*/
 		double[] y = new double[] { S_i, 0 };
@@ -177,8 +174,7 @@ public class WaterBudgetGroundWater{
 		SolverODE solver;
 		solver=SimpleIntegratorFactory.createSolver(solver_model, dt, ode, y);
 
-		/** result of the resolution of the ODE, if nZ=1, S_i=S_t
-		 * and setting of the new initial condition (S_i)*/
+		/** result of the resolution of the ODE*/
 		S_i=solver.integrateValues();
 
 		/** Check of the Storage values: they cannot be negative*/
@@ -190,7 +186,7 @@ public class WaterBudgetGroundWater{
 
 	/**
 	 *
-	 * @param Qinput: input discharge value
+	 * @param S_i: the actual storage 
 	 * @return the double value of the simulated discharge
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
@@ -201,21 +197,19 @@ public class WaterBudgetGroundWater{
 	}
 
 
-	
+
 
 	/**
 	 * Store of the results in hashmaps 
 	 *
 	 * @param waterStorage is the water storage
 	 * @param discharge is the discharge
-	 * @param evapotranspiration is the evapotranspiration
-	 * @param quickRunoff is the water quick runoff from the layer
-	 * @param drainage is drainage toward the lower layer
+	 * @param discharge is the discharge in mm
 	 * @throws SchemaException the schema exception
 	 */
-	
+
 	private void storeResult_series(int ID, double waterStorage,double discharge, double discharge_mm)
-									throws SchemaException {
+			throws SchemaException {
 
 		outHMStorage.put(ID, new double[]{waterStorage});
 		outHMDischarge.put(ID, new double[]{discharge});
@@ -223,6 +217,6 @@ public class WaterBudgetGroundWater{
 
 
 	}
-	
+
 
 }

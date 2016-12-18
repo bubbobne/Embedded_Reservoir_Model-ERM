@@ -30,19 +30,19 @@ import org.apache.commons.math3.ode.FirstOrderDifferentialEquations;
  */
 public class waterBudgetODE implements FirstOrderDifferentialEquations{
 
-	public static double transpiration;
+	public static double AET;
 	
 	public static double rootUpTake;
 
 
 	/**
-	 * Instantiates the first layer parameters .
+	 * Instantiates the  layer parameters .
 	 *
-	 * @param rain: precipitation value
-	 * @param ETmod: the modeled ET value
+	 * @param rootUpTake
+	 * @param AET
 	 */
-	public waterBudgetODE(double rootUpTake, double transpiration) {
-		this.transpiration=transpiration;
+	public waterBudgetODE(double rootUpTake, double AET) {
+		this.AET=AET;
 		this.rootUpTake=rootUpTake;
 
 	}
@@ -59,7 +59,7 @@ public class waterBudgetODE implements FirstOrderDifferentialEquations{
 	 */
 	public void computeDerivatives(double t, double[] y, double[] yDot)
 			throws MaxCountExceededException, DimensionMismatchException {
-		yDot[0] =(rootUpTake-transpiration);
+		yDot[0] =(rootUpTake-AET);
 		
 
 	
