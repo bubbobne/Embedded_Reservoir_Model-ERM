@@ -33,8 +33,6 @@ import oms3.annotations.Out;
 
 import org.geotools.feature.SchemaException;
 
-import canopyIN.ETModel;
-import canopyIN.SimpleETModelFactory;
 
 import java.io.IOException;
 
@@ -61,11 +59,6 @@ public class WaterBudgetCanopyOUT{
 	@Description("ETp: Potential evaopotranspiration value for the given time considered")
 	double ETp;
 
-	@Description("ET model: AET,LAI")
-	@In
-	public String ET_model;
-
-	ETModel ETmodel;
 
 	@Description("Leaf Area Index Hashmap")
 	@In
@@ -75,7 +68,6 @@ public class WaterBudgetCanopyOUT{
 	@Description("coefficient canopy out")
 	@In
 	public static double kc_canopy_out ;
-
 
 
 	@Description("Initial condition storage")
@@ -238,7 +230,7 @@ public class WaterBudgetCanopyOUT{
 		double s_CanopyMax=kc_canopy_out*LAI;
 
 
-		double AET=Math.max(0, (ETp*Math.min(1,S_i/s_CanopyMax)));	
+		double AET=Math.max(0, (ETp*Math.min(1,(S_i-s_CanopyMax)/s_CanopyMax)));	
 		return AET;
 	}
 
