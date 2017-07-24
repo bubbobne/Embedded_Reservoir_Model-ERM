@@ -17,17 +17,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package runoff;
+package WFIUH;
 
-import static org.jgrasstools.gears.libs.modules.JGTConstants.doubleNovalue;
 import static org.jgrasstools.gears.libs.modules.JGTConstants.isNovalue;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
-
-import javax.media.jai.iterator.RandomIter;
-import javax.media.jai.iterator.RandomIterFactory;
 
 import oms3.annotations.Description;
 import oms3.annotations.Execute;
@@ -39,7 +33,6 @@ import oms3.annotations.Unit;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.feature.SchemaException;
 import org.jgrasstools.gears.utils.coverage.CoverageUtilities;
-import org.jgrasstools.gears.utils.math.interpolation.LinearListInterpolator;
 import org.jgrasstools.hortonmachine.modules.statistics.cb.OmsCb;
 
 import java.awt.image.RenderedImage;
@@ -57,7 +50,7 @@ import java.io.IOException;
  * and the water storage values.
  * @author Marialaura Bancheri
  */
-public class WaterBudgetRunoff{
+public class WFIUHMain{
 
 
 	@Description("Input rain Hashmap")
@@ -168,7 +161,7 @@ public class WaterBudgetRunoff{
 			// and its timeStep,  plus the length of the width function/60, since we want minute intervals
 
 			// now is in minutes
-			runoff=new double [(int) widthFunction[widthFunction.length - 1][0] +inTimestep*60 + 1];
+			runoff=new double [(int)widthFunction[widthFunction.length - 1][0]/60+1];
 
 		}
 
@@ -190,13 +183,10 @@ public class WaterBudgetRunoff{
 		/** The output of the previous computation in the average discharge in 1 minute in m^3/s 
 		 * so we need the compute the hourly average */
 		double Q=computeMean(runoff,inTimestep);
-		
-		//System.out.println("runoff:"+Q);
-		//double Q_mm=Q*conversion/(area);
 
 
 		/** Save the result in  hashmaps for each station*/
-		storeResult_series(ID,alpha*rain,Q,runoff);
+		storeResult_series(ID,alpha*rain,Q);
 
 		runoff=computeNewVector(runoff,inTimestep);
 
@@ -240,7 +230,7 @@ public class WaterBudgetRunoff{
 	 */
 	public double computeMean (double [] runoff, int inTimeStep ){
 
-		int dim=(inTimeStep*60>runoff.length)?runoff.length:inTimeStep*60;
+		int dim=(inTimeStep>runoff.length)?runoff.length:inTimeStep;
 		for (int i=0;i<dim;i++){
 			runoff[0]=runoff[0]+runoff[i];	
 		}
@@ -260,9 +250,7 @@ public class WaterBudgetRunoff{
 	 */
 
 	public double [] computeNewVector (double [] runoff,int inTimeStep){
-		
-		inTimeStep=inTimeStep*60;
-		
+
 		for (int i=0;i<runoff.length;i++){
 			if (i<runoff.length-inTimeStep){
 			runoff[i]=runoff[inTimeStep+i];	
@@ -291,8 +279,6 @@ public class WaterBudgetRunoff{
 
 		RenderedImage rescaledRI = inRescaledDistance.getRenderedImage();
 		WritableRaster rescaledWR = CoverageUtilities.renderedImage2WritableRaster(rescaledRI, false);
-		
-		processWithTopIndex(rescaledWR);
 
 
 		GridCoverage2D widthfunctionSupCoverage = CoverageUtilities.buildCoverage("sup", rescaledWR, regionMap,
@@ -305,45 +291,7 @@ public class WaterBudgetRunoff{
 
 	}
 
-	private void processWithTopIndex( WritableRaster rescaledWR) throws Exception {
-		double[][] topindexCb = doCb(inTopindex);
-
-		// cumulate topindex
-		for( int i = 0; i < topindexCb.length; i++ ) {
-			if (i > 0) {
-				topindexCb[i][1] = topindexCb[i][1] + topindexCb[i - 1][1];
-			}
-		}
-		double max = topindexCb[topindexCb.length - 1][1];
-		// normalize
-		for( int i = 0; i < topindexCb.length; i++ ) {
-			topindexCb[i][1] = topindexCb[i][1] / max;
-		}
-
-		List<Double> meanValueList = new ArrayList<Double>();
-		List<Double> cumulatedValueList = new ArrayList<Double>();
-		for( int i = 0; i < topindexCb.length; i++ ) {
-			meanValueList.add(topindexCb[i][0]);
-			cumulatedValueList.add(topindexCb[i][1]);
-		}
-
-		LinearListInterpolator interpolator = new LinearListInterpolator(meanValueList, cumulatedValueList);
-		double topindexThreshold = interpolator.linearInterpolateX(1 - pSat / 100);
-
-		RenderedImage topindexRI = inTopindex.getRenderedImage();
-		RandomIter topindexIter = RandomIterFactory.create(topindexRI, null);
-
-		for( int c = 0; c < cols; c++ ) {
-			for( int r = 0; r < rows; r++ ) {
-				double topindex = topindexIter.getSampleDouble(c, r, 0);               
-				if (topindex >= topindexThreshold) {
-				}else{
-					rescaledWR.setSample(c, r, 0, doubleNovalue);
-				}
-			}
-		}
-	}
-
+	
 
 	/**
 	 * OmsCb computes the first two moments of the given input raster map
@@ -398,8 +346,6 @@ public class WaterBudgetRunoff{
 			cum = cum + tmpSum;
 			widthFunction[i][2] = cum;
 		}
-		
-		//System.out.println("Prova");
 	}
 
 
@@ -415,15 +361,11 @@ public class WaterBudgetRunoff{
 	 * @throws SchemaException the schema exception
 	 */
 
-	private void storeResult_series(int ID, double actualInput,double discharge, double[] vector ) throws SchemaException {
+	private void storeResult_series(int ID, double actualInput,double discharge) throws SchemaException {
 		
 		outHMActualInput.put(ID, new double[]{actualInput});
 		outHMDischarge.put(ID, new double[]{discharge});
-		
-		//
-		//for (int i=0;i<vector.length;i++){
-			//outHMDischarge_mm.put(i,new double[]{ vector[i]});
-		//}
+		outHMDischarge_mm.put(ID, new double[]{discharge*1000/area*3600});
 
 	}
 

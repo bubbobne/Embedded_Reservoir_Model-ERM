@@ -16,45 +16,23 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-package canopyIN;
+package prova;
 
 // TODO: Auto-generated Javadoc
 /**
- * The Class AETmodel.
+ * The Interface SolverODE, for all the ode considered.
+ * Just one method is considered. It returns the
+ * values of variable S after the integration of the ODE
+ * @author Marialaura Bancheri
  */
-public class AETmodel implements ETModel{
-	
-	/** The maximum storage. */
-	public static double s_max;
-	
-	/** The actual storage . */
-	public static double S_i;
-	
-	/** The multiplicative coefficient for the AET. */
-	public static double AETcoefficient;
+public interface SolverODE {
 
-	
 	/**
-	 * Instantiates a new AE tmodel.
+	 * Integrate values.
 	 *
-	 * @param S_i is the actual storage
-	 * @param s_max is the maximum storage
+	 * @return the double value from the integration of the ODE
 	 */
-	public AETmodel(double S_i, double s_max){
-		this.s_max=s_max;
-		this.S_i=S_i;
-	}
-
-	/* (non-Javadoc)
-	 * @see canopyIN.ETModel#ETcoefficient()
-	 */
-	public double ETcoefficient() {
-		AETcoefficient=(S_i<s_max)?S_i/s_max:1;
-		AETcoefficient=(S_i==0)?0:AETcoefficient;
-		return AETcoefficient;
-	}
-
+	abstract public double integrateValues ();
 
 
 }

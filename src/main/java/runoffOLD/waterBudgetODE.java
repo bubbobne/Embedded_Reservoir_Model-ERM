@@ -16,9 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package rootZone;
-
-import static org.jgrasstools.gears.libs.modules.JGTConstants.isNovalue;
+package runoffOLD;
 
 import org.apache.commons.math3.exception.DimensionMismatchException;
 import org.apache.commons.math3.exception.MaxCountExceededException;
@@ -32,34 +30,21 @@ import org.apache.commons.math3.ode.FirstOrderDifferentialEquations;
  */
 public class waterBudgetODE implements FirstOrderDifferentialEquations{
 
-	public static double a_uptake;
-
-	public static double actualInput;
-
-	public static double ETp;
-	
-	public static double s_RootZoneMax;
-	
-	public static double Pmax;
-	
-	public static double b_rz;
-
+	public static double Q;
+	public static double AET;
+	public static double inputFluxes;
 
 	/**
 	 * Instantiates the first layer parameters .
 	 *
-	 * @param actualInput: actual input value after the partition
-	 * @param ET: the modeled ET value
-	 * @param uptake: the modeled value of the uptake
-	 * @param Rg : the modeled value of the recharge of the lower layer
+	 * @param Q: discharge value
+	 * @param inputFluxes: input fluxes value
+	 * @param AET: the AET value
 	 */
-	public waterBudgetODE (double actualInput, double a_uptake,double s_RootZoneMax, double Pmax,double b_rz, double ETp) {
-		this.a_uptake=a_uptake;
-		this.actualInput=actualInput;
-		this.ETp=ETp;
-		this.s_RootZoneMax=s_RootZoneMax;
-		this.Pmax=Pmax;
-		this.b_rz=b_rz;
+	public waterBudgetODE(double inputFluxes, double Q, double AET) {
+		this.Q=Q;
+		this.inputFluxes=inputFluxes;
+		this.AET=AET;
 
 	}
 	
@@ -75,8 +60,9 @@ public class waterBudgetODE implements FirstOrderDifferentialEquations{
 	 */
 	public void computeDerivatives(double t, double[] y, double[] yDot)
 			throws MaxCountExceededException, DimensionMismatchException {
-		yDot[0] =actualInput-a_uptake*y[0]-Math.max(0, (ETp*Math.min(1,1.33*(y[0]/s_RootZoneMax))))-Pmax*Math.pow(y[0], b_rz);
-		//System.out.println("y"+yDot[0]);
+		yDot[0] =inputFluxes-Q-AET;
+		
+
 	
 	}
 

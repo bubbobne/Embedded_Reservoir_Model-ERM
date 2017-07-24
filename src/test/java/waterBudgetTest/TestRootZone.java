@@ -16,24 +16,23 @@ public class TestRootZone{
 	@Test
 	public void testLinear() throws Exception {
 
-		String startDate = "1994-01-01 00:00";
-		String endDate = "1994-01-02 00:00";
-		int timeStepMinutes = 60;
+		String startDate = "1998-10-03 00:00";
+		String endDate = "1998-10-05 00:00";
+		int timeStepMinutes = 60*24;
 		String fId = "ID";
 
-		String inPathToPrec = "resources/Input/rainfall.csv";
-		String inPathToET ="resources/Input/ET.csv";
-		String pathToS= "resources/Output/rootZone/S.csv";
-		String pathToUpTake= "resources/Output/rootZone/UpTake.csv";
-		String pathToET= "resources/Output/rootZone/ET.csv";
-		String pathToR= "resources/Output/rootZone/R_drain.csv";
+		String inPathToPrec ="resources/Output/canopy/Q_Canopy.csv";
+		String inPathToET ="resources/Input/etp_1_daily.csv";
+		String inPathToEwc ="resources/Output/canopy/ET_Canopy.csv";
+		String pathToS=  "resources/Output/rootZone/S_OUT_rz.csv";
+		String pathToET= "resources/Output/rootZone/ET_rz.csv";
+		String pathToR= "resources/Output/rootZone/R_drain_rz.csv";
 
 		
 		OmsTimeSeriesIteratorReader JReader = getTimeseriesReader(inPathToPrec, fId, startDate, endDate, timeStepMinutes);
-		//OmsTimeSeriesIteratorReader dischargeReader = getTimeseriesReader(inPathToDischarge, fId, startDate, endDate, timeStepMinutes);
+		OmsTimeSeriesIteratorReader EwcReader = getTimeseriesReader(inPathToEwc, fId, startDate, endDate, timeStepMinutes);
 		OmsTimeSeriesIteratorReader ETReader = getTimeseriesReader(inPathToET, fId, startDate, endDate, timeStepMinutes);
 		OmsTimeSeriesIteratorWriter writerS = new OmsTimeSeriesIteratorWriter();
-		OmsTimeSeriesIteratorWriter writerUpTake = new OmsTimeSeriesIteratorWriter();
 		OmsTimeSeriesIteratorWriter writerET = new OmsTimeSeriesIteratorWriter();
 		OmsTimeSeriesIteratorWriter writerR = new OmsTimeSeriesIteratorWriter();
 
@@ -42,11 +41,7 @@ public class TestRootZone{
 		writerS.tStart = startDate;
 		writerS.tTimestep = timeStepMinutes;
 		writerS.fileNovalue="-9999";
-		
-		writerUpTake.file = pathToUpTake;
-		writerUpTake.tStart = startDate;
-		writerUpTake.tTimestep = timeStepMinutes;
-		writerUpTake.fileNovalue="-9999";
+
 		
 		writerET.file = pathToET;
 		writerET.tStart = startDate;
@@ -67,15 +62,18 @@ public class TestRootZone{
 		while( JReader.doProcess ) {
 		
 			waterBudget.solver_model="dp853";
-			waterBudget.UpTake_model="NonLinearReservoir";
-			waterBudget.ET_model="AET";
-			waterBudget.a_uptake=75.3543670;
+			waterBudget.a_uptake=0.00;
 			waterBudget.b_uptake=1;
-			waterBudget.s_RootZoneMax=0.006681;
-			waterBudget.Pmax=70.799563;
-			waterBudget.pB=2.08;
-			waterBudget.pCmax=4.049;
-			waterBudget.connectTOcanopy=true;
+			
+			
+			waterBudget.s_RootZoneMax=135.71401910395977;
+			waterBudget.Pmax=0.008326964780554214;
+			waterBudget.b_rz=1.29;
+			waterBudget.pB=0.1;
+			waterBudget.connectTOcanopy=false;
+			waterBudget.inTimestep=60*24;
+			waterBudget.A=3.79;
+			
 
 			
 			JReader.nextRecord();
@@ -88,11 +86,14 @@ public class TestRootZone{
             ETReader.nextRecord();
             id2ValueMap = ETReader.outData;
             waterBudget.inHMETp = id2ValueMap;
+            
+            EwcReader.nextRecord();
+            id2ValueMap = EwcReader.outData;
+            waterBudget.inHMEwc = id2ValueMap;
 
             waterBudget.process();
             
             HashMap<Integer, double[]> outHMStorage = waterBudget.outHMStorage;
-            HashMap<Integer, double[]> outHMUpTake = waterBudget.outHMRootUpTake;
             HashMap<Integer, double[]> outHMET = waterBudget.outHMEvaporation;
             
             HashMap<Integer, double[]> outHMR = waterBudget.outHMR;
@@ -104,12 +105,7 @@ public class TestRootZone{
 				writerS.close();
 			}
 			
-			writerUpTake.inData = outHMUpTake;
-			writerUpTake.writeNextLine();
-			
-			if (pathToUpTake != null) {
-				writerUpTake.close();
-			}
+
 			
 			writerET.inData = outHMET;
 			writerET.writeNextLine();
@@ -131,6 +127,7 @@ public class TestRootZone{
 		JReader.close();
         //dischargeReader.close();
         ETReader.close();
+        EwcReader.close();
 
 	}
 
@@ -141,7 +138,7 @@ public class TestRootZone{
 		reader.file = inPath;
 		reader.idfield = "ID";
 		reader.tStart = startDate;
-		reader.tTimestep = 60;
+		reader.tTimestep = 60*24;
 		reader.tEnd = endDate;
 		reader.fileNovalue = "-9999";
 		reader.initProcess();

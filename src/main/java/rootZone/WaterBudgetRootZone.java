@@ -51,8 +51,11 @@ public class WaterBudgetRootZone{
 
 	@Description("Input rain Hashmap")
 	@In
-	public HashMap<Integer, double[]> inHMRain;
+	public HashMap<Integer, double[]> inHMRain;	
 	
+	@Description("Input ET wet canopy Hashmap")
+	@In
+	public HashMap<Integer, double[]> inHMEwc;
 
 	@Description("Input ET Hashmap")
 	@In
@@ -80,6 +83,10 @@ public class WaterBudgetRootZone{
 	@Description("Maximum percolation rate")
 	@In
 	public double Pmax;
+	
+	@Description("Exponential of non-linear reservoir")
+	@In
+	public double b_rz;
 	
 	@Description("Degree of spatial variability of the soil moisture capacity")
 	@In
@@ -111,9 +118,14 @@ public class WaterBudgetRootZone{
 	@In
 	public String solver_model;
 	
-	@Description("Initial condition storage")
+	
+	@Description("The area of the HRUs in km2")
 	@In
-	public static double IntialConditionStorage;
+	public static double A;
+	
+	@Description("Time step")
+	@In
+	public static double inTimestep;
 	
 	
 	@Description("The HashMap with the Actual input of the layer ")
@@ -136,12 +148,15 @@ public class WaterBudgetRootZone{
 	@Description("The output HashMap with the outflow which drains to the lower layer")
 	@Out
 	public HashMap<Integer, double[]> outHMR= new HashMap<Integer, double[]>() ;
+	
+	@Description("The output HashMap with the quick outflow ")
+	@Out
+	public HashMap<Integer, double[]> outHMquick= new HashMap<Integer, double[]>() ;
 
 	HashMap<Integer, double[]>initialConditionS_i= new HashMap<Integer, double[]>();
 	int step;
 
-	@Description("Integration time")
-	double dt ;
+
 
 
     
@@ -161,21 +176,26 @@ public class WaterBudgetRootZone{
 		// reading the ID of all the stations 
 		Set<Entry<Integer, double[]>> entrySet = inHMRain.entrySet();
 
+
 		if(step==0){
 			for (Entry<Integer, double[]> entry : entrySet){
 				Integer ID = entry.getKey();
-				initialConditionS_i.put(ID,new double[]{IntialConditionStorage});
+				initialConditionS_i.put(ID,new double[]{s_RootZoneMax/2});
 			}
 		}
 
 		// iterate over the station
 		for( Entry<Integer, double[]> entry : entrySet ) {
 			Integer ID = entry.getKey();
+			
+			//System.out.println(ID);
 
 			/**Input data reading*/
 			double rain = inHMRain.get(ID)[0];
 			if (isNovalue(rain)) rain= 0;
+			if(step==0&rain==0)rain= 1;
 			
+			//System.out.println("Qc:"+rain);
 
 			double alpha=(rain==0)?0:alpha(initialConditionS_i.get(ID)[0],rain,s_RootZoneMax);
 			
@@ -184,24 +204,41 @@ public class WaterBudgetRootZone{
 			
 			double actualInput=(1-alpha)*rain;
 			
+			double quick=alpha*rain/1000*A*Math.pow(10, 6)/(inTimestep*60);
+			
+			//System.out.println("RZmax:"+s_RootZoneMax );
+			
+			//System.out.println("P:"+Pmax );
+			//System.out.println("input:"+actualInput );
+			//System.out.println("b:"+b_rz );
+			//System.out.println("pB:"+pB );
+			
+			
 
 			double ETp=0;
 			if (inHMETp != null) ETp = inHMETp.get(ID)[0];
 			if (isNovalue(ETp)) ETp= 0;
+			
+			double Ewc=0;
+			if (inHMEwc != null) Ewc = inHMEwc.get(ID)[0];
+			if (isNovalue(Ewc)) Ewc= 0;
+			
+			double ETpNet=ETp-Ewc;
 
-			double waterStorage=computeS(actualInput,initialConditionS_i.get(ID)[0], ETp);
+			double waterStorage=computeS(actualInput,initialConditionS_i.get(ID)[0], ETpNet);
 			
 			double upTake=(connectTOcanopy)?computeUpTake(waterStorage):0;
-			double evapotranspiration=computeAET(waterStorage, ETp);
+			double evapotranspiration=computeAET(waterStorage, ETpNet);
 						
 			double drainage=computeR(waterStorage);
 			
 			
 
 			/** Save the result in  hashmaps for each station*/
-			storeResult_series(ID,actualInput,waterStorage,upTake,evapotranspiration,drainage);
+			storeResult_series(ID,actualInput,waterStorage,upTake,evapotranspiration,drainage,quick);
 			
 			initialConditionS_i.put(ID,new double[]{waterStorage});
+			
 
 		}
 
@@ -217,18 +254,21 @@ public class WaterBudgetRootZone{
 	 */
 	
 	private double alpha( double S_i, double Pval, double S_max) {
- 		//double pCmax=S_max *(pB+1);
- 		double coeff1 = ((1.0 - ((pB + 1.0) * (S_i) / pCmax)));
+ 		double pCmax=S_max *(pB+1);
+ 		double coeff1 = 1.0 - ((pB + 1.0) * (S_i) / pCmax);
  		double exp = 1.0 / (pB + 1.0);
  		double ct_prev = pCmax * (1.0 - Math.pow(coeff1, exp));
  		double UT1 = Math.max((Pval - pCmax + ct_prev), 0.0);
         //Pval = Pval - UT1;
-        double dummy = Math.min(((ct_prev + Pval- UT1) / pCmax), 1.0);
+         double dummy = Math.min(((ct_prev + Pval- UT1) / pCmax), 1.0);
         double coeff2 = (1.0 - dummy);
         double exp2 = (pB + 1.0);
         double xn = (pCmax / (pB + 1.0)) * (1.0 - (Math.pow(coeff2, exp2)));
         double UT2 = Math.max(Pval- UT1 - (xn - S_i), 0);
  		return alpha=(UT1+UT2)/Pval;
+ 		
+ 		
+ 		
  	}
 
 	
@@ -243,38 +283,26 @@ public class WaterBudgetRootZone{
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public double computeS(double actualInput, double S_i, double ETp) throws IOException {
-		/**integration time*/
-		dt=1E-4;
 
-		/** SimpleFactory for the computation of the UpTake, according to the model*/
-		double upTake=0;
-		if (connectTOcanopy){
-		model=SimpleDischargeModelFactory.createModel(UpTake_model, a_uptake, S_i, b_uptake);
-		upTake=model.dischargeValues();
-		} 
-
-		/** SimpleFactory for the computation of ET, according to the model*/
-		ETModel=SimpleETModelFactory.createModel(ET_model, S_i, s_RootZoneMax);	
-		double Emod=ETModel.ETcoefficient()*ETp;
-		
-		
-		double Rg=Pmax*S_i/s_RootZoneMax;
 
 		/** Creation of the differential equation*/
-		FirstOrderDifferentialEquations ode=new waterBudgetODE(actualInput,upTake, Emod, Rg);			
+		FirstOrderDifferentialEquations ode=new waterBudgetODE(actualInput,a_uptake,s_RootZoneMax,Pmax,b_rz,ETp);			
 
 		/** Boundaries conditions*/
-		double[] y = new double[] { S_i, 0 };
+		double[] y = new double[] { S_i, s_RootZoneMax };
 
 		/** Choice of the ODE solver */	
 		SolverODE solver;
-		solver=SimpleIntegratorFactory.createSolver(solver_model, dt, ode, y);
+		solver=SimpleIntegratorFactory.createSolver(solver_model, 1, ode, y);
 
 		/** result of the resolution of the ODE*/
 		S_i=solver.integrateValues();
 
+
 		/** Check of the Storage values: they cannot be negative*/
-		if (S_i<0) S_i=0;
+		//if (S_i<0) S_i=0;
+		
+
 
 		return S_i;
 	}
@@ -287,8 +315,7 @@ public class WaterBudgetRootZone{
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public double computeUpTake( double S_i) throws IOException {
-		model=SimpleDischargeModelFactory.createModel(UpTake_model, a_uptake, S_i, b_uptake);
-		double upTake=model.dischargeValues();
+		double upTake=a_uptake*Math.pow(S_i, b_uptake);
 		return upTake;
 	}
 
@@ -301,7 +328,8 @@ public class WaterBudgetRootZone{
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public double computeR(double S_i) throws IOException {
-		double Rg=Pmax*S_i/s_RootZoneMax;
+		//double Rg=Pmax/s_RootZoneMax*Math.pow(S_i, b_rz);
+		double Rg=Pmax*Math.pow(S_i, b_rz);
 		return Rg;
 	}
 
@@ -314,9 +342,10 @@ public class WaterBudgetRootZone{
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public double computeAET(double S_i, double ETp) throws IOException {
-		/** SimpleFactory for the computation of ET, according to the model*/
-		ETModel=SimpleETModelFactory.createModel(ET_model, S_i, s_RootZoneMax);	
-		double Emod=ETModel.ETcoefficient()*ETp;
+		//double Emod=S_i/s_RootZoneMax*ETp;
+		double ratio=S_i/s_RootZoneMax;
+		double Emod=Math.max(0, (ETp*Math.min(1,1.33*S_i/s_RootZoneMax)));
+
 		return Emod;
 	}
 	
@@ -335,13 +364,14 @@ public class WaterBudgetRootZone{
 	 */
 	
 	private void storeResult_series(int ID, double actualInput, double waterStorage,double upTake,
-			double evapotranspiration,double drainage) throws SchemaException {
+			double evapotranspiration,double drainage, double quick) throws SchemaException {
 
 		outHMActualInput.put(ID, new double[]{actualInput});
 		outHMStorage.put(ID, new double[]{waterStorage});
 		outHMRootUpTake.put(ID, new double[]{upTake});
 		outHMEvaporation.put(ID, new double[]{evapotranspiration});
 		outHMR.put(ID, new double[]{drainage});
+		outHMquick.put(ID, new double[]{quick});
 
 	}
 	

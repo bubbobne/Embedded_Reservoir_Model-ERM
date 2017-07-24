@@ -8,79 +8,82 @@ import org.jgrasstools.gears.io.timedependent.OmsTimeSeriesIteratorReader;
 import org.jgrasstools.gears.io.timedependent.OmsTimeSeriesIteratorWriter;
 import org.junit.Test;
 
-import canopyIN.WaterBudgetCanopyIN;
+import canopyOUT.WaterBudgetCanopyOUT;
 
-public class TestCanopyIN{
+public class TestCanopyOUT{
 
 	@Test
 	public void testLinear() throws Exception {
 
-		String startDate = "1994-01-01 00:00";
-		String endDate = "1994-01-02 00:00";
-		int timeStepMinutes = 60;
+		String startDate = "1998-10-03 00:00";
+		String endDate = "1998-10-05 00:00";
+		int timeStepMinutes = 60*24;
 		String fId = "ID";
 		
 
 
 
-		//String inPathToPrec = "resources/Input/rainfall.csv";
-		String inPathToET ="resources/Input/ET.csv";
-		String inPathToUpTake= "resources/Output/rootZone/UpTake.csv";
-		String inPathToLAI= "resources/Input/LAI.csv";		
+		String inPathToPrec = "resources/Input/Melting_1.csv";
+		String inPathToET ="resources/Input/etp_1_daily.csv";
+		String inPathToLAI= "resources/Input/LAI_1_daily.csv";		
 		
-		String pathToS= "resources/Output/canopy/S.csv";
-		String pathToET= "resources/Output/canopy/ET.csv";
+		String pathToS= "resources/Output/canopy/S_Canopy.csv";
+		String pathToET= "resources/Output/canopy/ET_Canopy.csv";
+		String pathToThroughfall= "resources/Output/canopy/Q_Canopy.csv";
 
 		
 		OmsTimeSeriesIteratorReader ETReader = getTimeseriesReader(inPathToET, fId, startDate, endDate, timeStepMinutes);
-		OmsTimeSeriesIteratorReader UpTakeReader = getTimeseriesReader(inPathToUpTake, fId, startDate, endDate, timeStepMinutes);
+		OmsTimeSeriesIteratorReader RainReader = getTimeseriesReader(inPathToPrec, fId, startDate, endDate, timeStepMinutes);
 		OmsTimeSeriesIteratorReader LAIReader = getTimeseriesReader(inPathToLAI, fId, startDate, endDate, timeStepMinutes);
 
 		
 		OmsTimeSeriesIteratorWriter writerS = new OmsTimeSeriesIteratorWriter();
-		OmsTimeSeriesIteratorWriter writerTranspiration = new OmsTimeSeriesIteratorWriter();
+		OmsTimeSeriesIteratorWriter writerAET = new OmsTimeSeriesIteratorWriter();
+		OmsTimeSeriesIteratorWriter writerThroughfall = new OmsTimeSeriesIteratorWriter();
 
 
 		writerS.file = pathToS;
 		writerS.tStart = startDate;
 		writerS.tTimestep = timeStepMinutes;
 		writerS.fileNovalue="-9999";
-		
 
 		
-		writerTranspiration.file = pathToET;
-		writerTranspiration.tStart = startDate;
-		writerTranspiration.tTimestep = timeStepMinutes;
-		writerTranspiration.fileNovalue="-9999";
+		writerAET.file = pathToET;
+		writerAET.tStart = startDate;
+		writerAET.tTimestep = timeStepMinutes;
+		writerAET.fileNovalue="-9999";
+		
+		
+		writerThroughfall.file = pathToThroughfall;
+		writerThroughfall.tStart = startDate;
+		writerThroughfall.tTimestep = timeStepMinutes;
+		writerThroughfall.fileNovalue="-9999";
 	
 		
-		WaterBudgetCanopyIN waterBudget= new WaterBudgetCanopyIN();
+		WaterBudgetCanopyOUT waterBudget= new WaterBudgetCanopyOUT();
 
 
-		while( UpTakeReader.doProcess ) {
-		
+		while( RainReader.doProcess ) {
+			
+
+		    waterBudget.p=0.65;	
 			waterBudget.solver_model="dp853";
-			waterBudget.ET_model="AET";
-			waterBudget.k=0.463;
-			waterBudget.kc_canopy_in=0.0;
-			//waterBudget.IntialConditionStorage=1.0;
+			waterBudget.kc_canopy_out= 0.25;
+			waterBudget.IntialConditionStorage=0.001;
+
 
 			
-			UpTakeReader.nextRecord();
+			RainReader.nextRecord();
 			
-			HashMap<Integer, double[]> id2ValueMap = UpTakeReader.outData;
-			waterBudget.inHMRootUpTake= id2ValueMap;
+			HashMap<Integer, double[]> id2ValueMap = RainReader.outData;
+			waterBudget.inHMRain= id2ValueMap;
 			
             
             ETReader.nextRecord();
             id2ValueMap = ETReader.outData;
             waterBudget.inHMETp = id2ValueMap;
             
-            //UpTakeReader.nextRecord();
-            //id2ValueMap = UpTakeReader.outData;
-            //waterBudget.inHMRootUpTake = id2ValueMap;
-            
-            LAIReader.fileNovalue="-9999.0";
+
             LAIReader.nextRecord();
             id2ValueMap = LAIReader.outData;
             waterBudget.inHMLAI = id2ValueMap;
@@ -89,6 +92,7 @@ public class TestCanopyIN{
             
             HashMap<Integer, double[]> outHMStorage = waterBudget.outHMStorage;
             HashMap<Integer, double[]> outHMET = waterBudget.outHMAET;
+            HashMap<Integer, double[]> outHThroughfall = waterBudget.outHMThroughfall;
             
             
 			writerS.inData = outHMStorage ;
@@ -100,20 +104,27 @@ public class TestCanopyIN{
 			
 
 			
-			writerTranspiration.inData = outHMET;
-			writerTranspiration.writeNextLine();
+			writerAET.inData = outHMET;
+			writerAET.writeNextLine();
 			
 			if (pathToET != null) {
-				writerTranspiration.close();
+				writerAET.close();
 			}
 			
+			
+			writerThroughfall.inData =outHThroughfall ;
+			writerThroughfall.writeNextLine();
+			
+			if (pathToThroughfall != null) {
+				writerThroughfall.close();
+			}
 			
 
 		}
 
         LAIReader.close();
         ETReader.close();
-        //UpTakeReader.close();
+        RainReader.close();
 
 	}
 
@@ -124,7 +135,7 @@ public class TestCanopyIN{
 		reader.file = inPath;
 		reader.idfield = "ID";
 		reader.tStart = startDate;
-		reader.tTimestep = 60;
+		reader.tTimestep = 60*24;
 		reader.tEnd = endDate;
 		reader.fileNovalue = "-9999";
 		reader.initProcess();

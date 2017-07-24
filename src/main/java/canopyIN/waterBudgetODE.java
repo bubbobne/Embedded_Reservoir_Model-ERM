@@ -30,9 +30,13 @@ import org.apache.commons.math3.ode.FirstOrderDifferentialEquations;
  */
 public class waterBudgetODE implements FirstOrderDifferentialEquations{
 
-	public static double AET;
+	public static double ETp;
 	
 	public static double rootUpTake;
+	
+	public static double S_i;
+	
+	public static double s_CanopyMax;
 
 
 	/**
@@ -41,9 +45,10 @@ public class waterBudgetODE implements FirstOrderDifferentialEquations{
 	 * @param rootUpTake
 	 * @param AET
 	 */
-	public waterBudgetODE(double rootUpTake, double AET) {
-		this.AET=AET;
+	public waterBudgetODE(double rootUpTake, double s_CanopyMax,double ETp) {
+		this.ETp=ETp;
 		this.rootUpTake=rootUpTake;
+		this.s_CanopyMax=s_CanopyMax;
 
 	}
 	
@@ -59,7 +64,7 @@ public class waterBudgetODE implements FirstOrderDifferentialEquations{
 	 */
 	public void computeDerivatives(double t, double[] y, double[] yDot)
 			throws MaxCountExceededException, DimensionMismatchException {
-		yDot[0] =(rootUpTake-AET);
+		yDot[0] =(rootUpTake-y[0]/s_CanopyMax*ETp);
 		
 
 	

@@ -17,7 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package runoff;
+package runoffOLD;
 
 import static org.jgrasstools.gears.libs.modules.JGTConstants.doubleNovalue;
 import static org.jgrasstools.gears.libs.modules.JGTConstants.isNovalue;
@@ -26,15 +26,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import javax.media.jai.iterator.RandomIter;
-import javax.media.jai.iterator.RandomIterFactory;
-
 import oms3.annotations.Description;
 import oms3.annotations.Execute;
 import oms3.annotations.In;
 import oms3.annotations.Out;
 import oms3.annotations.Unit;
-
+import runoff.ETModel;
+import runoff.SimpleETModelFactory;
 
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.feature.SchemaException;
@@ -46,7 +44,10 @@ import java.awt.image.RenderedImage;
 import java.awt.image.WritableRaster;
 import java.io.IOException;
 
+import javax.media.jai.iterator.RandomIter;
+import javax.media.jai.iterator.RandomIterFactory;
 
+import org.apache.commons.math3.ode.*;
 
 
 
@@ -65,6 +66,16 @@ public class WaterBudgetRunoff{
 	public HashMap<Integer, double[]> inRainValues;
 
 
+	@Description("Input ET Hashmap")
+	@In
+	public HashMap<Integer, double[]> inHMETp;
+	
+	@Description("ET model: AET")
+	@In
+	public String ET_model;
+	
+	ETModel ETModel;
+
 	@Description("The ID of the investigated station")
 	@In
 	public int ID;
@@ -72,6 +83,10 @@ public class WaterBudgetRunoff{
 	@Description("Time step of the simulation")
 	@In
 	public int inTimestep;
+
+	@Description("ODE solver model: dp853, Eulero")
+	@In
+	public String solver_model;
 
 
 	@Description("Rescaled distance raster map")
@@ -87,6 +102,10 @@ public class WaterBudgetRunoff{
 	@In
 	public double pCelerity;
 
+	@Description("Maximum value of the water storage, needed for the"
+			+ "computation of the Actual EvapoTraspiration")
+	@In
+	public static double s_RunoffMax;
 
 	@Description("partitioning coefficient between the runoff layer and the root zone layer")
 	@In
@@ -98,6 +117,9 @@ public class WaterBudgetRunoff{
 	@In
 	public double pSat;
 	
+	@Description("Initial condition storage")
+	@In
+	public static double IntialConditionStorage;
 
 	@Description("First date of the simulation")
 	@In
@@ -119,11 +141,21 @@ public class WaterBudgetRunoff{
 	@Out
 	public HashMap<Integer, double[]> outHMDischarge_mm= new HashMap<Integer, double[]>() ;
 
+	@Description("The output HashMap with the storage values")
+	@Out
+	public HashMap<Integer, double[]> outHMStorage= new HashMap<Integer, double[]>() ;
 
+	@Description("The output HashMap with the AET values")
+	@Out
+	public HashMap<Integer, double[]> outHMET= new HashMap<Integer, double[]>() ;
+
+	@Description("Initial condition for the computation of the storage")
+	double S_i;
 
 	@Description("step of the simulation")
 	int step;
-
+	@Description("Integration time")
+	double dt ;
 
 	@Description("parameter of the input rescaled distance raster map")
 	private double xRes;
@@ -168,13 +200,18 @@ public class WaterBudgetRunoff{
 			// and its timeStep,  plus the length of the width function/60, since we want minute intervals
 
 			// now is in minutes
-			runoff=new double [(int) widthFunction[widthFunction.length - 1][0] +inTimestep*60 + 1];
-
+			runoff=new double [(int)widthFunction[widthFunction.length - 1][0]/60+1];
+			
+			S_i=IntialConditionStorage;
 		}
 
 		/**Input data reading*/
 		double rain = inRainValues.get(ID)[0];
 		if (isNovalue(rain)) rain= 0;
+
+		double ETp=0;
+		if (inHMETp != null) ETp = inHMETp.get(ID)[0];
+		if (isNovalue(ETp)) ETp= 0;
 
 		/**
 		 * The conversion in needed for input fluxes, since the rescaled distance is in
@@ -191,12 +228,14 @@ public class WaterBudgetRunoff{
 		 * so we need the compute the hourly average */
 		double Q=computeMean(runoff,inTimestep);
 		
-		//System.out.println("runoff:"+Q);
-		//double Q_mm=Q*conversion/(area);
 
+		/** computation of the storage, the disharge must be converted from m^3/s to mm/h*/
+		double waterStorage=computeS(alpha*rain,Q*1000/area*3600, ETp);
+
+		double ET=computeAET(waterStorage, ETp);
 
 		/** Save the result in  hashmaps for each station*/
-		storeResult_series(ID,alpha*rain,Q,runoff);
+		storeResult_series(ID,alpha*rain,waterStorage,Q,ET);
 
 		runoff=computeNewVector(runoff,inTimestep);
 
@@ -204,7 +243,37 @@ public class WaterBudgetRunoff{
 
 	}
 
-	
+	/**
+	 * Compute the water storage
+	 *
+	 * @param J: input rain 
+	 * @param Qmod : the discahrge obtained with the WFIUH
+	 * @return the water storage, according to the model and the layer
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	public double computeS(double rain, double Qmod, double ETp) throws IOException {
+		/**integration time*/
+		dt=1E-4;
+
+		double Emod=computeAET(S_i, ETp);
+
+		/** Creation of the differential equation*/
+		FirstOrderDifferentialEquations ode=new waterBudgetODE(rain,Qmod, Emod);			
+
+		/** Boundaries conditions*/
+		double[] y = new double[] { S_i, 0 };
+
+		/** Choice of the ODE solver */	
+		SolverODE solver;
+		solver=SimpleIntegratorFactory.createSolver(solver_model, dt, ode, y);
+
+		/** result of the resolution of the ODE, if nZ=1, S_i=S_t
+		 * and setting of the new initial condition (S_i)*/
+		S_i=solver.integrateValues();
+		S_i=(S_i<0)?0:S_i;
+		return S_i;
+	}
+
 
 	/**
 	 * Compute computation of the discharge according to the WFIUH model
@@ -227,6 +296,12 @@ public class WaterBudgetRunoff{
 	}
 
 
+	public double computeAET(double S_i, double ETp) throws IOException {
+		/** SimpleFactory for the computation of ET, according to the model*/
+		ETModel=SimpleETModelFactory.createModel(ET_model, S_i, s_RunoffMax);	
+		double Emod=ETModel.ETcoefficient()*ETp;
+		return Emod;
+	}
 
 	/**
 	 * Compute the mean of the runoff vector given by the previous method
@@ -240,7 +315,7 @@ public class WaterBudgetRunoff{
 	 */
 	public double computeMean (double [] runoff, int inTimeStep ){
 
-		int dim=(inTimeStep*60>runoff.length)?runoff.length:inTimeStep*60;
+		int dim=(inTimeStep>runoff.length)?runoff.length:inTimeStep;
 		for (int i=0;i<dim;i++){
 			runoff[0]=runoff[0]+runoff[i];	
 		}
@@ -260,9 +335,7 @@ public class WaterBudgetRunoff{
 	 */
 
 	public double [] computeNewVector (double [] runoff,int inTimeStep){
-		
-		inTimeStep=inTimeStep*60;
-		
+
 		for (int i=0;i<runoff.length;i++){
 			if (i<runoff.length-inTimeStep){
 			runoff[i]=runoff[inTimeStep+i];	
@@ -291,9 +364,8 @@ public class WaterBudgetRunoff{
 
 		RenderedImage rescaledRI = inRescaledDistance.getRenderedImage();
 		WritableRaster rescaledWR = CoverageUtilities.renderedImage2WritableRaster(rescaledRI, false);
-		
-		processWithTopIndex(rescaledWR);
 
+		//processWithTopIndex(rescaledWR);
 
 		GridCoverage2D widthfunctionSupCoverage = CoverageUtilities.buildCoverage("sup", rescaledWR, regionMap,
 				inRescaledDistance.getCoordinateReferenceSystem());
@@ -398,8 +470,6 @@ public class WaterBudgetRunoff{
 			cum = cum + tmpSum;
 			widthFunction[i][2] = cum;
 		}
-		
-		//System.out.println("Prova");
 	}
 
 
@@ -415,15 +485,15 @@ public class WaterBudgetRunoff{
 	 * @throws SchemaException the schema exception
 	 */
 
-	private void storeResult_series(int ID, double actualInput,double discharge, double[] vector ) throws SchemaException {
+	private void storeResult_series(int ID, double actualInput,  double waterStorage,double discharge,
+			double AET) throws SchemaException {
 		
 		outHMActualInput.put(ID, new double[]{actualInput});
+		outHMStorage.put(ID, new double[]{waterStorage});
 		outHMDischarge.put(ID, new double[]{discharge});
-		
-		//
-		//for (int i=0;i<vector.length;i++){
-			//outHMDischarge_mm.put(i,new double[]{ vector[i]});
-		//}
+		outHMDischarge_mm.put(ID, new double[]{discharge*1000/area*3600});
+		outHMET.put(ID, new double[]{AET});
+
 
 	}
 

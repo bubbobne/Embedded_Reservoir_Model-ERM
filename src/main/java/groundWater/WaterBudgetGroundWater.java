@@ -50,6 +50,11 @@ public class WaterBudgetGroundWater{
 	@Description("Input recharge Hashmap")
 	@In
 	public HashMap<Integer, double[]> inHMRechargeValues;
+	
+	
+	@Description("Time Step simulation")
+	@In
+	public int timeStep;
 
 
 	@Description("Coefficient of the non-linear Reservoir model ")
@@ -64,6 +69,10 @@ public class WaterBudgetGroundWater{
 	@Description("The area of the HRUs in km2")
 	@In
 	public static double A;
+	
+	@Description("Smax")
+	@In
+	public static double Smax;	
 
 
 	@Description("Discharge model: NonLinearReservoir, Clapp-H")
@@ -77,11 +86,6 @@ public class WaterBudgetGroundWater{
 	@In
 	public String solver_model;
 	
-	@Description("Initial condition storage")
-	@In
-	public static double IntialConditionStorage;
-
-
 	@Description("The output HashMap with the Water Storage")
 	@Out
 	public HashMap<Integer, double[]> outHMStorage= new HashMap<Integer, double[]>() ;
@@ -117,10 +121,11 @@ public class WaterBudgetGroundWater{
 		// reading the ID of all the stations 
 		Set<Entry<Integer, double[]>> entrySet = inHMRechargeValues.entrySet();
 
+
 		if(step==0){
 			for (Entry<Integer, double[]> entry : entrySet){
 				Integer ID = entry.getKey();
-				initialConditionS_i.put(ID,new double[]{IntialConditionStorage});
+				initialConditionS_i.put(ID,new double[]{Smax/2});
 			}
 		}
 
@@ -131,11 +136,13 @@ public class WaterBudgetGroundWater{
 			/**Input data reading*/
 			double recharge = inHMRechargeValues.get(ID)[0];
 			if (isNovalue(recharge)) recharge= 0;
+			if(step==0&recharge==0)recharge= 1;
 
 
 			double waterStorage=computeS(recharge,initialConditionS_i.get(ID)[0]);
 			double discharge_mm=computeQ(waterStorage);
-			double discharge=discharge_mm/1000*A*Math.pow(10, 6)/3600;		
+			
+			double discharge=discharge_mm/1000*A*Math.pow(10, 6)/(60*timeStep);		
 
 			/** Save the result in  hashmaps for each station*/
 			storeResult_series(ID,waterStorage,discharge,discharge_mm);
@@ -159,26 +166,25 @@ public class WaterBudgetGroundWater{
 	 */
 	public double computeS(double recharge, double S_i) throws IOException {
 
-		/** SimpleFactory for the computation of Q, according to the model*/
-		model=SimpleDischargeModelFactory.createModel(Q_model, a, S_i, b);
-		double Qmod=model.dischargeValues();
-
 
 		/** Creation of the differential equation*/
-		FirstOrderDifferentialEquations ode=new waterBudgetODE(recharge,Qmod);			
+		FirstOrderDifferentialEquations ode=new waterBudgetODE(recharge,a,b, Smax);			
 
 		/** Boundaries conditions*/
-		double[] y = new double[] { S_i, 0 };
+		double[] y = new double[] { S_i, Smax };
 
 		/** Choice of the ODE solver */	
 		SolverODE solver;
-		solver=SimpleIntegratorFactory.createSolver(solver_model, dt, ode, y);
+		solver=SimpleIntegratorFactory.createSolver(solver_model, 1, ode, y);
 
 		/** result of the resolution of the ODE*/
 		S_i=solver.integrateValues();
 
 		/** Check of the Storage values: they cannot be negative*/
 		if (S_i<0) S_i=0;
+		
+		//System.out.println("GW:"+S_i);
+		//System.out.println("a:"+a+"b:"+b+"Smax:"+Smax);
 
 		return S_i;
 	}
@@ -191,8 +197,8 @@ public class WaterBudgetGroundWater{
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public double computeQ(double S_i) throws IOException {
-		model=SimpleDischargeModelFactory.createModel(Q_model, a, S_i, b);
-		double Q=model.dischargeValues();
+		//model=SimpleDischargeModelFactory.createModel(Q_model, a, S_i, b);
+		double Q=a*Math.pow(S_i/Smax, b);
 		return Q;
 	}
 

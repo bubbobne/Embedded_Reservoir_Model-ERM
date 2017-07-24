@@ -33,6 +33,8 @@ import oms3.annotations.Out;
 
 import org.geotools.feature.SchemaException;
 
+import canopyIN.ETModel;
+import canopyIN.SimpleETModelFactory;
 
 import java.io.IOException;
 
@@ -55,28 +57,55 @@ public class WaterBudgetCanopyOUT{
 	@Description("Input ETp Hashmap")
 	@In
 	public HashMap<Integer, double[]> inHMETp;
-	
+
 	@Description("ETp: Potential evaopotranspiration value for the given time considered")
 	double ETp;
 
-	
+	@Description("ET model: AET,LAI")
+	@In
+	public String ET_model;
+
+	ETModel ETmodel;
+
 	@Description("Leaf Area Index Hashmap")
 	@In
 	public  HashMap<Integer, double[]> inHMLAI;
 
-	
-	@Description("crop coefficient canopy out")
+
+	@Description("coefficient canopy out")
 	@In
 	public static double kc_canopy_out ;
-	
+
+
+
 	@Description("Initial condition storage")
 	@In
-	public static double IntialConditionStorage;
+	public static double IntialConditionStorage=0.00001;
 
+	@Description("Partitioning coefficient free throughfall")
+	@In
+	public static double p;
 	
+	@Description("canopy drainage rate coefficient")
+	@In
+	public double K;
+	
+	@Description("canopy drainage rate exponent")
+	@In
+	public double g;
+
+
 	@Description("ODE solver model:dp853, Eulero ")
 	@In
 	public String solver_model;
+
+	@Description("The HashMap with the Actual input of the layer ")
+	@Out
+	public HashMap<Integer, double[]> outHMActualInput= new HashMap<Integer, double[]>() ;
+
+	@Description("The HashMap with the Actual input of the layer ")
+	@Out
+	public HashMap<Integer, double[]> outHMActualOutput= new HashMap<Integer, double[]>() ;
 
 	@Description("The output HashMap with the Water Storage  ")
 	@Out
@@ -86,11 +115,15 @@ public class WaterBudgetCanopyOUT{
 	@Out
 	public HashMap<Integer, double[]> outHMThroughfall= new HashMap<Integer, double[]>() ;
 
+
+	@Description("The output HashMap with the AET ")
+	@Out
+	public  HashMap<Integer, double[]> outHMAET= new HashMap<Integer, double[]>() ;
+
 	HashMap<Integer, double[]>initialConditionS_i= new HashMap<Integer, double[]>();
 	int step;
 	@Description("Integration time")
 	double dt=1E-4; ;
-
 
 
 
@@ -109,12 +142,7 @@ public class WaterBudgetCanopyOUT{
 		// reading the ID of all the stations 
 		Set<Entry<Integer, double[]>> entrySet = inHMRain.entrySet();
 
-		if(step==0){
-			for (Entry<Integer, double[]> entry : entrySet){
-				Integer ID = entry.getKey();
-				initialConditionS_i.put(ID,new double[]{IntialConditionStorage});
-			}
-		}
+
 
 		// iterate over the station
 		for( Entry<Integer, double[]> entry : entrySet ) {
@@ -123,21 +151,30 @@ public class WaterBudgetCanopyOUT{
 			/**Input data reading*/
 			double rain = inHMRain.get(ID)[0];
 			if (isNovalue(rain)) rain= 0;
+			if(step==0&rain==0)rain= 1;
 
-					
+
 			double LAI= inHMLAI.get(ID)[0];
-			if (isNovalue(LAI)) LAI= 0;
+			if (isNovalue(LAI)) LAI= 3;
+			
+			if(step==0){
+				
+					initialConditionS_i.put(ID,new double[]{kc_canopy_out*LAI/2});				
+			}
 
 
 			ETp=0;
 			if (inHMETp != null) ETp = inHMETp.get(ID)[0];
 			if (isNovalue(ETp)) ETp= 0;
 
-			double waterStorage=computeS(rain,initialConditionS_i.get(ID)[0],LAI);
-			double throughfall=computeThroughfall(rain, waterStorage,LAI);
+			double waterStorage=computeS((1-p)*rain,initialConditionS_i.get(ID)[0],LAI);
+			double actualInput=(1-p)*rain;
+			double actualOutput=computeThroughfall((1-p)*rain,waterStorage,LAI);
+			double throughfall=actualOutput+p*rain;			
+			double AET=computeAET(waterStorage,LAI);
 
 			/** Save the result in  hashmaps for each station*/
-			storeResult_series(ID,waterStorage,throughfall);
+			storeResult_series(ID,waterStorage,throughfall, AET, actualInput,actualOutput);
 
 			initialConditionS_i.put(ID,new double[]{waterStorage});
 
@@ -158,42 +195,69 @@ public class WaterBudgetCanopyOUT{
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public double computeS(double rain, double S_i, double LAI) throws IOException {
+		
+		double s_CanopyMax=kc_canopy_out*LAI;
 
+		
 		/** Creation of the differential equation*/
-		FirstOrderDifferentialEquations ode=new waterBudgetODE(rain,computeThroughfall(rain,S_i,LAI), ETp);			
+		FirstOrderDifferentialEquations ode=new waterBudgetODE(20,1, 1, 0);			
 
+	
 		/** Boundaries conditions*/
-		double[] y = new double[] { S_i, 0 };
+		double[] y = new double[] { 0, 0 };
 
 		/** Choice of the ODE solver */	
 		SolverODE solver;
-		solver=SimpleIntegratorFactory.createSolver(solver_model, dt, ode, y);
+		solver=SimpleIntegratorFactory.createSolver(solver_model, 1, ode, y);
 
 		/** result of the resolution of the ODE*/
-		S_i=solver.integrateValues();
+		S_i=(S_i<0.1&rain==0)?0:solver.integrateValues();
 
+		
 		/** Check of the Storage values: they cannot be negative*/
-		if (S_i<0) S_i=0;
+		//if (S_i<0.1) S_i=0;
+		
+
+		
+		//System.out.println("Canopy_out:"+S_i);
 
 		return S_i;
 	}
 
+
 	/**
-	 * Compute the Throughfall
+	 * Compute the ET
 	 *
-	 * @param rain: input rain 
 	 * @param S_i : initial condition
 	 * @param LAI: leaf area index
 	 * @throws SchemaException the schema exception
 	 */
 
-	public double computeThroughfall(double rain, double S_i, double LAI) throws IOException {
+	public double computeAET(double S_i, double LAI) throws IOException {
 		//(Brisson et al., 1998):
 		double s_CanopyMax=kc_canopy_out*LAI;
-		double throughfall=(S_i>s_CanopyMax)?S_i-s_CanopyMax:0;
-		
-		//Hracowitz 2016 model
-		//double throughfall=rain-Math.min(Imax-S_i, rain);
+
+
+		double AET=Math.max(0, (ETp*Math.min(1,S_i/s_CanopyMax)));	
+		return AET;
+	}
+
+	/**
+	 * Compute the Throughfall
+	 *
+	 * @param S_i : initial condition
+	 * @param LAI: leaf area index
+	 * @throws SchemaException the schema exception
+	 */
+
+	public double computeThroughfall(double rain,double S_i, double LAI) throws IOException {
+		//(Brisson et al., 1998):
+		double s_CanopyMax=kc_canopy_out*LAI;
+
+		double throughfall=Math.max(0, S_i-s_CanopyMax);
+
+		throughfall=(s_CanopyMax==0)?rain:throughfall;
+
 		return throughfall;
 	}
 
@@ -206,10 +270,14 @@ public class WaterBudgetCanopyOUT{
 	 * @throws SchemaException the schema exception
 	 */
 
-	private void storeResult_series(int ID, double waterStorage,double throughfall) throws SchemaException {
+	private void storeResult_series(int ID, double waterStorage,double throughfall, double AET, 
+			double actualInput, double actualOutput) throws SchemaException {
 
 		outHMStorage.put(ID, new double[]{waterStorage});
 		outHMThroughfall.put(ID, new double[]{throughfall});
+		outHMAET.put(ID, new double[]{AET});
+		outHMActualInput.put(ID, new double[]{actualInput});
+		outHMActualOutput.put(ID, new double[]{actualOutput});
 
 	}
 

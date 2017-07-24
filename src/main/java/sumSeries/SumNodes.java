@@ -74,8 +74,10 @@ public class SumNodes extends JGTModel {
 	@Execute
 	public void process() throws Exception {
 
-		System.out.println(id + ": processing sum series - Time step: " +
-				timeSeriesCounter);
+		//System.out.println(id + ": processing sum series - Time step: " +
+			//timeSeriesCounter);
+		
+		//System.out.println("SumNodes");
 
 		checkNull(inHMDischarge);
 		double[] sum = new double[1];

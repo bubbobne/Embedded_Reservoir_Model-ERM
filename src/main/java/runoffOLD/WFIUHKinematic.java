@@ -1,8 +1,7 @@
-package runoff;
+package runoffOLD;
 
 
 import org.jgrasstools.gears.libs.modules.ModelsEngine;
-import org.joda.time.Duration;
 
 
 /**
@@ -33,8 +32,6 @@ public class WFIUHKinematic {
 
 	/** The actual step. */
 	int step;
-	
-    private double[][] Qtot = null;
 
 	/**
 	 * Instantiates a new IUH kinematic.
@@ -68,41 +65,26 @@ public class WFIUHKinematic {
 	public double [] calculateQ() {
 
 		// tcorr is the concentration time in minutes
-		int tcorr =(int) widthFunction[widthFunction.length - 1][0];
+		double tcorr =(int) widthFunction[widthFunction.length - 1][0]/60;
 
 		// is the duration of the precipitation in minutes
-		int tpmax =inTimestep*60;
-		tpmax=(tpmax>tcorr)?tcorr:tpmax;
-		
-
+		int tpmax =inTimestep;
 
 		//is the discharge computed in m^3/s according to the WFIUH at time step i+1 (i1)
-		double[] Q_i1 = new double[(int) tcorr + tpmax + 1];
+		double[] Q_i1 = new double[(int)tcorr];
 
 
-		for( int t = 1; t <= tcorr; t += 1 ) {
+		for( int t = 1; t < tcorr-1; t += 1 ) {
 
 			if (t <= tpmax) {
 
-				Q_i1[t]=(double) (inputFluxes* area*ModelsEngine.width_interpolate(widthFunction, t, 0, 2));
-
-
+				Q_i1[t]=(double) (inputFluxes * area* ModelsEngine.width_interpolate(widthFunction, t*60, 0, 2))*pCelerity;
 
 			} else {
-				Q_i1[t]= (double) (inputFluxes *area* (ModelsEngine.width_interpolate(widthFunction, t, 0, 2) - ModelsEngine
-						.width_interpolate(widthFunction, t - tpmax, 0, 2)));
+				Q_i1[t]= (double) (inputFluxes * area* (ModelsEngine.width_interpolate(widthFunction, t*60, 0, 2) - ModelsEngine
+						.width_interpolate(widthFunction, t*60 - tpmax, 0, 2)))*pCelerity;
 			}
-
 		}
-		
-		
-		
-        for( int t = tcorr; t < (tcorr + tpmax); t += 1 ) {
-            
-        	Q_i1[t] = (double) (inputFluxes * area*(widthFunction[widthFunction.length - 1][2] 
-            		- ModelsEngine.width_interpolate(widthFunction, t - tpmax, 0, 2)));
-        }
-        
 
 		// is the average discharge in m^3/s over 60 minutes 
 		//double [] Q=computeMean(Q_i1);
@@ -112,10 +94,8 @@ public class WFIUHKinematic {
 		// where the two time series overlap
 		for( int t = 0; t <  Q_i1.length; t ++) {	
 			Q_i[t]= Q_i[t]+Q_i1[t];
-			//System.out.println(Q_i[t]);
 		}
 
-		
 		return Q_i;
 
 

@@ -81,7 +81,7 @@ public class WaterBudgetCanopyIN{
 
 	@Description("Initial condition storage")
 	@In
-	public static double IntialConditionStorage;
+	public static double IntialConditionStorage=0.000001;
 
 	@Description("ODE solver model: dp853, Eulero ")
 	@In
@@ -133,10 +133,11 @@ public class WaterBudgetCanopyIN{
 			/**Input data reading*/
 			double rootUpTake = inHMRootUpTake.get(ID)[0];
 			if (isNovalue(rootUpTake)) rootUpTake= 0;
+			if(step==0&rootUpTake==0)rootUpTake= 1;
 
 
 			double LAI= inHMLAI.get(ID)[0];
-			if (isNovalue(LAI)) LAI= 0;
+			if (isNovalue(LAI)) LAI= 3;
 
 
 			ETp=0;
@@ -174,26 +175,25 @@ public class WaterBudgetCanopyIN{
 		//(Brisson et al., 1998):
 		double s_CanopyMax=kc_canopy_in*LAI;
 
-		/** SimpleFactory for the computation of ET, according to the model*/
-		ETmodel=SimpleETModelFactory.createModel(ET_model,S_i,s_CanopyMax,k,LAI);
-		double AETmod=ETp*ETmodel.ETcoefficient();
-
-
+		
 		/** Creation of the differential equation*/
-		FirstOrderDifferentialEquations ode=new waterBudgetODE(rootUpTake, AETmod);			
+		FirstOrderDifferentialEquations ode=new waterBudgetODE(rootUpTake,s_CanopyMax,ETp);			
 
 		/** Boundaries conditions*/
-		double[] y = new double[] { S_i, 0 };
+		double[] y = new double[] { S_i, s_CanopyMax};
 
 		/** Choice of the ODE solver */	
 		SolverODE solver;
-		solver=SimpleIntegratorFactory.createSolver(solver_model, dt, ode, y);
+		solver=SimpleIntegratorFactory.createSolver(solver_model, 1, ode, y);
 
 		/** result of the resolution of the ODE*/
 		S_i=solver.integrateValues();
 
+
 		/** Check of the Storage values: they cannot be negative*/
 		if (S_i<0) S_i=0;
+		
+		//System.out.println("Canopy_in:"+S_i);
 
 		return S_i;
 	}
@@ -208,9 +208,7 @@ public class WaterBudgetCanopyIN{
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public double computeAET(double S_i,double LAI) throws IOException {
-		/** SimpleFactory for the computation of ET, according to the model*/
-		ETmodel=SimpleETModelFactory.createModel(ET_model,S_i,kc_canopy_in*LAI,k,LAI);
-		double AETmod=ETp*ETmodel.ETcoefficient();
+		double AETmod=ETp*S_i/(kc_canopy_in*LAI);
 		return AETmod;
 	}
 

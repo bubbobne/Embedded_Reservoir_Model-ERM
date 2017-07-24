@@ -1,0 +1,14 @@
+@T,table
+Created,2017-07-24 16:30
+Author,HortonMachine library
+@H,timestamp
+ID,
+Type,Date
+Format,yyyy-MM-dd HH:mm
+,1997-01-01 00:00
+,1997-01-01 01:00
+,1997-01-01 02:00
+,1997-01-01 03:00
+,1997-01-01 04:00
+,1997-01-01 05:00
+

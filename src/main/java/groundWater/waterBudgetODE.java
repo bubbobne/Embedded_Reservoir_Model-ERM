@@ -30,9 +30,15 @@ import org.apache.commons.math3.ode.FirstOrderDifferentialEquations;
  */
 public class waterBudgetODE implements FirstOrderDifferentialEquations{
 
-	public static double Qmod;
+	public static double a;
+	
+	public static double b;
 
 	public static double recharge;
+	
+	public static double Smax;
+	
+	
 
 
 
@@ -42,9 +48,11 @@ public class waterBudgetODE implements FirstOrderDifferentialEquations{
 	 * @param recharge: input recharge value
 	 * @param Qmod: the modeled input discharge
 	 */
-	public waterBudgetODE(double recharge, double Qmod) {
-		this.Qmod=Qmod;
+	public waterBudgetODE(double recharge, double a, double b, double Smax) {
+		this.a=a;
+		this.b=b;
 		this.recharge=recharge;
+		this.Smax=Smax;
 
 	}
 	
@@ -60,7 +68,7 @@ public class waterBudgetODE implements FirstOrderDifferentialEquations{
 	 */
 	public void computeDerivatives(double t, double[] y, double[] yDot)
 			throws MaxCountExceededException, DimensionMismatchException {
-		yDot[0] =recharge-Qmod;
+		yDot[0] =recharge-a*Math.pow(y[0]/Smax, b);
 		
 
 	

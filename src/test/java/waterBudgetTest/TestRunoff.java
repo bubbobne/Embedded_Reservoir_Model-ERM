@@ -18,19 +18,22 @@ public class TestRunoff{
 	@Test
 	public void testLinear() throws Exception {
 
-		String startDate = "1996-09-17 20:00";
-		String endDate = "1996-09-18 20:00";
+		String startDate = "1997-01-01 00:00";
+		String endDate = "1997-01-01 05:00";
 		int timeStepMinutes = 60;
 		String fId = "ID";
 
-		String inPathToPrec = "resources/Input/rainfall.csv";
+		String inPathToPrec = "resources/Input/InputRO_1.csv";
 		String pathToQ= "resources/Output/runoff/Q_runoff_2.csv";
+		String pathToQint= "resources/Output/runoff/Q_runoff_3.csv";
+		
 
 
 		
 		OmsTimeSeriesIteratorReader JReader = getTimeseriesReader(inPathToPrec, fId, startDate, endDate, timeStepMinutes);
 
 		OmsTimeSeriesIteratorWriter writerQ = new OmsTimeSeriesIteratorWriter();
+		OmsTimeSeriesIteratorWriter writerQint = new OmsTimeSeriesIteratorWriter();
 
 		
 		writerQ.file = pathToQ;
@@ -39,12 +42,17 @@ public class TestRunoff{
 		writerQ.fileNovalue="-9999";
 		
 		
+		writerQint.file = pathToQint;
+		writerQint.tStart = startDate;
+		writerQint.tTimestep = timeStepMinutes;
+		writerQint.fileNovalue="-9999";
+		
 
 		
 		WaterBudgetRunoff waterBudgetRunoff= new WaterBudgetRunoff();
 		
 		OmsRasterReader Wsup = new OmsRasterReader();
-		Wsup.file = "resources/Input/rescaled_4.asc";
+		Wsup.file = "resources/Input/rescaled_1.asc";
 		Wsup.fileNovalue = -9999.0;
 		Wsup.geodataNovalue = Double.NaN;
 		Wsup.process();
@@ -52,7 +60,7 @@ public class TestRunoff{
 		
 		
 		OmsRasterReader topindex = new OmsRasterReader();
-		topindex.file = "resources/Input/top_4.asc";
+		topindex.file = "resources/Input/top_1.asc";
 		topindex.fileNovalue = -9999.0;
 		topindex.geodataNovalue = Double.NaN;
 		topindex.process();
@@ -61,18 +69,18 @@ public class TestRunoff{
 
 		while( JReader.doProcess ) {
 		
-			waterBudgetRunoff.solver_model="dp853";
-			waterBudgetRunoff.ET_model="AET";
+			//waterBudgetRunoff.solver_model="dp853";
+			//waterBudgetRunoff.ET_model="AET";
 			waterBudgetRunoff.inRescaledDistance=width_sup;
 			waterBudgetRunoff.pCelerity=2;
 			waterBudgetRunoff.inTopindex=topIndex;
-			waterBudgetRunoff.pSat=40;
+			waterBudgetRunoff.pSat=20;
 			waterBudgetRunoff.inTimestep=timeStepMinutes;
 			waterBudgetRunoff.tStartDate=startDate;
 			waterBudgetRunoff.tEndDate=endDate;
-			waterBudgetRunoff.ID=209;
+			waterBudgetRunoff.ID=1;
 			waterBudgetRunoff.alpha=1;
-			waterBudgetRunoff.s_RunoffMax=4.60;
+			//waterBudgetRunoff.s_RunoffMax=4.60;
 			
 			JReader.nextRecord();
 			
@@ -82,6 +90,7 @@ public class TestRunoff{
 			waterBudgetRunoff.process();
             
             HashMap<Integer, double[]> outHMDischarge = waterBudgetRunoff.outHMDischarge;
+            HashMap<Integer, double[]> outHMDischargeint = waterBudgetRunoff.outHMDischarge_mm;
 
 			
 			writerQ.inData = outHMDischarge;
@@ -89,6 +98,13 @@ public class TestRunoff{
 			
 			if (pathToQ != null) {
 				writerQ.close();
+			}
+			
+			writerQint.inData = outHMDischargeint;
+			writerQint.writeNextLine();
+			
+			if (pathToQint != null) {
+				writerQint.close();
 			}
           
 		}

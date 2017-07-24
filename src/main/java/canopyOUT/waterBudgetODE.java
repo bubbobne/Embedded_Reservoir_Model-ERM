@@ -21,6 +21,7 @@ package canopyOUT;
 import org.apache.commons.math3.exception.DimensionMismatchException;
 import org.apache.commons.math3.exception.MaxCountExceededException;
 import org.apache.commons.math3.ode.FirstOrderDifferentialEquations;
+import static org.jgrasstools.gears.libs.modules.JGTConstants.isNovalue;
 
 // TODO: Auto-generated Javadoc
 /**
@@ -30,11 +31,13 @@ import org.apache.commons.math3.ode.FirstOrderDifferentialEquations;
  */
 public class waterBudgetODE implements FirstOrderDifferentialEquations{
 
-	public static double throughfall;
+	public static double s_CanopyMax;
 
 	public static double rain;
 
 	public static double ETp;
+	
+	public static double S_i;
 	
 
 
@@ -45,10 +48,11 @@ public class waterBudgetODE implements FirstOrderDifferentialEquations{
 	 * @param ETp: the modeled ET value
 	 * @param throughfall: the modeled throughfall value
 	 */
-	public waterBudgetODE(double rain, double throughfall, double ETp) {
-		this.throughfall=throughfall;
+	public waterBudgetODE(double rain, double s_CanopyMax, double ETp, double S_i) {
+		this.s_CanopyMax=s_CanopyMax;
 		this.rain=rain;
 		this.ETp=ETp;
+		this.S_i=S_i;
 
 	}
 	
@@ -64,10 +68,12 @@ public class waterBudgetODE implements FirstOrderDifferentialEquations{
 	 */
 	public void computeDerivatives(double t, double[] y, double[] yDot)
 			throws MaxCountExceededException, DimensionMismatchException {
-		yDot[0] =(rain-throughfall-ETp);
+
+		
+		
+		yDot[0] =rain-Math.max(0, (y[0]-s_CanopyMax))- Math.max(0, (ETp*Math.min(1,(y[0]-s_CanopyMax)/s_CanopyMax)));
 		
 
-	
 	}
 
 }
