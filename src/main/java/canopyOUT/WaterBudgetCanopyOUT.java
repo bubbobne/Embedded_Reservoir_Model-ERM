@@ -67,16 +67,16 @@ public class WaterBudgetCanopyOUT{
 
 	@Description("coefficient canopy out")
 	@In
-	public static double kc_canopy_out ;
+	public double kc_canopy_out ;
 
 
 	@Description("Initial condition storage")
 	@In
-	public static double IntialConditionStorage=0.00001;
+	public double IntialConditionStorage=0.00001;
 
 	@Description("Partitioning coefficient free throughfall")
 	@In
-	public static double p;
+	public double p;
 	
 	@Description("canopy drainage rate coefficient")
 	@In

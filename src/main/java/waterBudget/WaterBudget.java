@@ -83,34 +83,34 @@ public class WaterBudget extends JGTModel{
 
 	@Description("Area of the basin")
 	@In
-	public static double A ;
+	public double A ;
 
 
 	@Description("Parameter of the non-linear Reservoir model "
 			+ "for the considered layer")
 	@In
-	public static double a ;
+	public double a ;
 
 
 	@Description("Parameter of non-linear reservoir, for the upper layer")
 	@In
-	public static double b;
+	public double b;
 
 
 	@Description("Pore volume in the root zone")
 	@In
-	public static double nZ;
+	public double nZ;
 
 
 	@Description("Maximum value of the water storage, needed for the"
 			+ "computation of the Actual EvapoTraspiration")
 	@In
-	public static double s_max;
+	public double s_max;
 
 
 	@Description("Maximum recharge rate of the lower layer")
 	@In
-	public static double Re;
+	public double Re;
 
 
 	@Description("Discharge model: NonLinearReservoir, Clapp-H")

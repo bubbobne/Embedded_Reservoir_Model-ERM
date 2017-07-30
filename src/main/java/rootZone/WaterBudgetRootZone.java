@@ -121,11 +121,11 @@ public class WaterBudgetRootZone{
 	
 	@Description("The area of the HRUs in km2")
 	@In
-	public static double A;
+	public double A;
 	
 	@Description("Time step")
 	@In
-	public static double inTimestep;
+	public double inTimestep;
 	
 	
 	@Description("The HashMap with the Actual input of the layer ")

@@ -59,20 +59,20 @@ public class WaterBudgetGroundWater{
 
 	@Description("Coefficient of the non-linear Reservoir model ")
 	@In
-	public static double a ;
+	public double a ;
 
 
 	@Description("Exponent of non-linear reservoir")
 	@In
-	public static double b;
+	public double b;
 
 	@Description("The area of the HRUs in km2")
 	@In
-	public static double A;
+	public double A;
 	
 	@Description("Smax")
 	@In
-	public static double Smax;	
+	public double Smax;
 
 
 	@Description("Discharge model: NonLinearReservoir, Clapp-H")

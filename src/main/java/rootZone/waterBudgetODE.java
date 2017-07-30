@@ -32,17 +32,17 @@ import org.apache.commons.math3.ode.FirstOrderDifferentialEquations;
  */
 public class waterBudgetODE implements FirstOrderDifferentialEquations{
 
-	public static double a_uptake;
+	public double a_uptake;
 
-	public static double actualInput;
+	public double actualInput;
 
-	public static double ETp;
+	public double ETp;
 	
-	public static double s_RootZoneMax;
+	public double s_RootZoneMax;
 	
-	public static double Pmax;
+	public double Pmax;
 	
-	public static double b_rz;
+	public double b_rz;
 
 
 	/**

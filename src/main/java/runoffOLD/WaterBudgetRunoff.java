@@ -105,7 +105,7 @@ public class WaterBudgetRunoff{
 	@Description("Maximum value of the water storage, needed for the"
 			+ "computation of the Actual EvapoTraspiration")
 	@In
-	public static double s_RunoffMax;
+	public double s_RunoffMax;
 
 	@Description("partitioning coefficient between the runoff layer and the root zone layer")
 	@In
@@ -119,7 +119,7 @@ public class WaterBudgetRunoff{
 	
 	@Description("Initial condition storage")
 	@In
-	public static double IntialConditionStorage;
+	public double IntialConditionStorage;
 
 	@Description("First date of the simulation")
 	@In

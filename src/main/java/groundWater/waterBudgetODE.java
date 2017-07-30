@@ -30,13 +30,13 @@ import org.apache.commons.math3.ode.FirstOrderDifferentialEquations;
  */
 public class waterBudgetODE implements FirstOrderDifferentialEquations{
 
-	public static double a;
+	public double a;
 	
-	public static double b;
+	public double b;
 
-	public static double recharge;
+	public double recharge;
 	
-	public static double Smax;
+	public double Smax;
 	
 	
 

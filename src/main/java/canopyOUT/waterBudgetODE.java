@@ -31,13 +31,13 @@ import static org.jgrasstools.gears.libs.modules.JGTConstants.isNovalue;
  */
 public class waterBudgetODE implements FirstOrderDifferentialEquations{
 
-	public static double s_CanopyMax;
+	public double s_CanopyMax;
 
-	public static double rain;
+	public double rain;
 
-	public static double ETp;
+	public double ETp;
 	
-	public static double S_i;
+	public double S_i;
 	
 
 

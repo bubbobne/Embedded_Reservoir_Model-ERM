@@ -35,14 +35,14 @@ import org.apache.commons.math3.ode.FirstOrderDifferentialEquations;
  */
 public class waterBudgetODE implements FirstOrderDifferentialEquations{
 
-	public static double Qmod;
+	public double Qmod;
 
 	
-	public static double nZ;
+	public double nZ;
 
-	public static double totalInputFluxes;
+	public double totalInputFluxes;
 
-	public static double ETmod;
+	public double ETmod;
 
 
 	/**

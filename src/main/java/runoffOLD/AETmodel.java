@@ -2,9 +2,9 @@ package runoffOLD;
 
 public class AETmodel implements ETModel{
 	
-	public static double s_max;
-	public static double S_i;
-	public static double AETcoefficient;
+	public double s_max;
+	public double S_i;
+	public double AETcoefficient;
 
 	
 	public AETmodel(double S_i, double s_max){

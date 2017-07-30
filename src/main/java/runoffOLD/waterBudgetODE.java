@@ -30,9 +30,9 @@ import org.apache.commons.math3.ode.FirstOrderDifferentialEquations;
  */
 public class waterBudgetODE implements FirstOrderDifferentialEquations{
 
-	public static double Q;
-	public static double AET;
-	public static double inputFluxes;
+	public double Q;
+	public double AET;
+	public double inputFluxes;
 
 	/**
 	 * Instantiates the first layer parameters .
