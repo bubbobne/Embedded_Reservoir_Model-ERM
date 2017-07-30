@@ -159,7 +159,7 @@ public class WaterBudgetCanopyOUT{
 			if (inHMETp != null) ETp = inHMETp.get(ID)[0];
 			if (isNovalue(ETp)) ETp= 0;
 			
-			System.out.println("kc"+kc_canopy_out);
+			//System.out.println("kc"+kc_canopy_out);
 
 			double waterStorage=computeS((1-p)*rain,initialConditionS_i.get(ID)[0],LAI);
 			double actualInput=(1-p)*rain;
