@@ -158,6 +158,8 @@ public class WaterBudgetCanopyOUT{
 			ETp=0;
 			if (inHMETp != null) ETp = inHMETp.get(ID)[0];
 			if (isNovalue(ETp)) ETp= 0;
+			
+			System.out.println("kc"+kc_canopy_out);
 
 			double waterStorage=computeS((1-p)*rain,initialConditionS_i.get(ID)[0],LAI);
 			double actualInput=(1-p)*rain;
@@ -189,10 +191,9 @@ public class WaterBudgetCanopyOUT{
 	public double computeS(double rain, double S_i, double LAI) throws IOException {
 		
 		double s_CanopyMax=kc_canopy_out*LAI;
-
 		
 		/** Creation of the differential equation*/
-		FirstOrderDifferentialEquations ode=new waterBudgetODE(20,1, 1, 0);			
+		FirstOrderDifferentialEquations ode=new waterBudgetODE(rain,s_CanopyMax, ETp, S_i);			
 
 	
 		/** Boundaries conditions*/
