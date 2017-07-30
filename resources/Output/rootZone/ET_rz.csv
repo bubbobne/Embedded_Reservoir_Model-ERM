@@ -1,11 +1,11 @@
 @T,table
-Created,2017-07-24 16:12
+Created,2017-07-30 19:32
 Author,HortonMachine library
 @H,timestamp,value_1
 ID,,1
 Type,Date,Double
 Format,yyyy-MM-dd HH:mm,
-,1998-10-03 00:00,0.0
+,1998-10-03 00:00,1.2314392728964227
 ,1998-10-04 00:00,0.0
 ,1998-10-05 00:00,0.0
 
