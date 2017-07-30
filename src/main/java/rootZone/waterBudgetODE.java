@@ -32,8 +32,6 @@ import org.apache.commons.math3.ode.FirstOrderDifferentialEquations;
  */
 public class waterBudgetODE implements FirstOrderDifferentialEquations{
 
-	public double a_uptake;
-
 	public double actualInput;
 
 	public double ETp;
@@ -53,8 +51,7 @@ public class waterBudgetODE implements FirstOrderDifferentialEquations{
 	 * @param uptake: the modeled value of the uptake
 	 * @param Rg : the modeled value of the recharge of the lower layer
 	 */
-	public waterBudgetODE (double actualInput, double a_uptake,double s_RootZoneMax, double Pmax,double b_rz, double ETp) {
-		this.a_uptake=a_uptake;
+	public waterBudgetODE (double actualInput,double s_RootZoneMax, double Pmax,double b_rz, double ETp) {
 		this.actualInput=actualInput;
 		this.ETp=ETp;
 		this.s_RootZoneMax=s_RootZoneMax;
@@ -75,7 +72,7 @@ public class waterBudgetODE implements FirstOrderDifferentialEquations{
 	 */
 	public void computeDerivatives(double t, double[] y, double[] yDot)
 			throws MaxCountExceededException, DimensionMismatchException {
-		yDot[0] =actualInput-a_uptake*y[0]-Math.max(0, (ETp*Math.min(1,1.33*(y[0]/s_RootZoneMax))))-Pmax*Math.pow(y[0], b_rz);
+		yDot[0] =actualInput-Math.max(0, (ETp*Math.min(1,1.33*(y[0]/s_RootZoneMax))))-Pmax*Math.pow(y[0], b_rz);
 		//System.out.println("y"+yDot[0]);
 	
 	}

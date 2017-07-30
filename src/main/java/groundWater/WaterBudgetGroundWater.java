@@ -75,13 +75,6 @@ public class WaterBudgetGroundWater{
 	public double Smax;
 
 
-	@Description("Discharge model: NonLinearReservoir, Clapp-H")
-	@In
-	public String Q_model;
-
-	DischargeModel model;
-
-
 	@Description("ODE solver model: dp853, Eulero ")
 	@In
 	public String solver_model;
@@ -100,11 +93,6 @@ public class WaterBudgetGroundWater{
 
 	HashMap<Integer, double[]>initialConditionS_i= new HashMap<Integer, double[]>();
 	int step;
-
-	@Description("Integration time")
-	double dt=1E-4;
-
-
 
 
 	/**
@@ -197,7 +185,6 @@ public class WaterBudgetGroundWater{
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public double computeQ(double S_i) throws IOException {
-		//model=SimpleDischargeModelFactory.createModel(Q_model, a, S_i, b);
 		double Q=a*Math.pow(S_i/Smax, b);
 		return Q;
 	}

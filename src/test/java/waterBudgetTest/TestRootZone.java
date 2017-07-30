@@ -62,15 +62,12 @@ public class TestRootZone{
 		while( JReader.doProcess ) {
 		
 			waterBudget.solver_model="dp853";
-			waterBudget.a_uptake=0.00;
-			waterBudget.b_uptake=1;
-			
+
 			
 			waterBudget.s_RootZoneMax=135.71401910395977;
 			waterBudget.Pmax=0.008326964780554214;
 			waterBudget.b_rz=1.29;
 			waterBudget.pB=0.1;
-			waterBudget.connectTOcanopy=false;
 			waterBudget.inTimestep=60*24;
 			waterBudget.A=3.79;
 			

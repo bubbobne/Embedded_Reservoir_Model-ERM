@@ -114,8 +114,6 @@ public class WaterBudgetCanopyOUT{
 
 	HashMap<Integer, double[]>initialConditionS_i= new HashMap<Integer, double[]>();
 	int step;
-	@Description("Integration time")
-	double dt=1E-4; ;
 
 
 
@@ -197,7 +195,7 @@ public class WaterBudgetCanopyOUT{
 
 	
 		/** Boundaries conditions*/
-		double[] y = new double[] { 0, 0 };
+		double[] y = new double[] {  S_i, s_CanopyMax };
 
 		/** Choice of the ODE solver */	
 		SolverODE solver;

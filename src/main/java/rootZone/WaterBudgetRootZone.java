@@ -30,11 +30,9 @@ import oms3.annotations.Description;
 import oms3.annotations.Execute;
 import oms3.annotations.In;
 import oms3.annotations.Out;
-import oms3.annotations.Unit;
 
 import org.geotools.feature.SchemaException;
 
-import rootZone.SimpleETModelFactory;
 
 import java.io.IOException;
 
@@ -60,21 +58,8 @@ public class WaterBudgetRootZone{
 	@Description("Input ET Hashmap")
 	@In
 	public HashMap<Integer, double[]> inHMETp;
-	
-	@Description("ET model: AET")
-	@In
-	public String ET_model;
-	ETModel ETModel;
 
 
-	@Description("Coefficient of the non-linear Reservoir model")
-	@In
-	public double a_uptake ;
-
-
-	@Description("Exponent of non-linear reservoir")
-	@In
-	public double b_uptake;
 
 	@Description("The maximum storage capacity")
 	@In
@@ -103,15 +88,6 @@ public class WaterBudgetRootZone{
 	@In
 	public double s_RootZoneMax;
 	
-	@Description("Flag to allow the cnnection to the canopy")
-	@In
-	public boolean connectTOcanopy;
-	
-	
-	@Description("Uptake model: NonLinearReservoir, Clapp-H")
-	@In
-	public String UpTake_model;
-	UpTakeModel model;
 
 
 	@Description("ODE solver model: dp853, Eulero")
@@ -136,9 +112,6 @@ public class WaterBudgetRootZone{
 	@Out
 	public HashMap<Integer, double[]> outHMStorage= new HashMap<Integer, double[]>() ;
 
-	@Description("The output HashMap with the root uptake ")
-	@Out
-	public HashMap<Integer, double[]> outHMRootUpTake= new HashMap<Integer, double[]>() ;
 
 	@Description("The output HashMap with the AET ")
 	@Out
@@ -227,7 +200,6 @@ public class WaterBudgetRootZone{
 
 			double waterStorage=computeS(actualInput,initialConditionS_i.get(ID)[0], ETpNet);
 			
-			double upTake=(connectTOcanopy)?computeUpTake(waterStorage):0;
 			double evapotranspiration=computeAET(waterStorage, ETpNet);
 						
 			double drainage=computeR(waterStorage);
@@ -235,7 +207,7 @@ public class WaterBudgetRootZone{
 			
 
 			/** Save the result in  hashmaps for each station*/
-			storeResult_series(ID,actualInput,waterStorage,upTake,evapotranspiration,drainage,quick);
+			storeResult_series(ID,actualInput,waterStorage,evapotranspiration,drainage,quick);
 			
 			initialConditionS_i.put(ID,new double[]{waterStorage});
 			
@@ -286,7 +258,7 @@ public class WaterBudgetRootZone{
 
 
 		/** Creation of the differential equation*/
-		FirstOrderDifferentialEquations ode=new waterBudgetODE(actualInput,a_uptake,s_RootZoneMax,Pmax,b_rz,ETp);			
+		FirstOrderDifferentialEquations ode=new waterBudgetODE(actualInput,s_RootZoneMax,Pmax,b_rz,ETp);			
 
 		/** Boundaries conditions*/
 		double[] y = new double[] { S_i, s_RootZoneMax };
@@ -308,17 +280,6 @@ public class WaterBudgetRootZone{
 	}
 
 
-	/**
-	 * Compute computation of the uptake according to the model
-	 * @param S_i: the actual storage value
-	 * @return the double value of the simulated uptake
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 */
-	public double computeUpTake( double S_i) throws IOException {
-		double upTake=a_uptake*Math.pow(S_i, b_uptake);
-		return upTake;
-	}
-
 
 	/**
 	 * Compute the outflow toward the lower layer
@@ -328,7 +289,6 @@ public class WaterBudgetRootZone{
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public double computeR(double S_i) throws IOException {
-		//double Rg=Pmax/s_RootZoneMax*Math.pow(S_i, b_rz);
 		double Rg=Pmax*Math.pow(S_i, b_rz);
 		return Rg;
 	}
@@ -342,10 +302,7 @@ public class WaterBudgetRootZone{
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public double computeAET(double S_i, double ETp) throws IOException {
-		//double Emod=S_i/s_RootZoneMax*ETp;
-		double ratio=S_i/s_RootZoneMax;
 		double Emod=Math.max(0, (ETp*Math.min(1,1.33*S_i/s_RootZoneMax)));
-
 		return Emod;
 	}
 	
@@ -363,12 +320,11 @@ public class WaterBudgetRootZone{
 	 * @throws SchemaException the schema exception
 	 */
 	
-	private void storeResult_series(int ID, double actualInput, double waterStorage,double upTake,
+	private void storeResult_series(int ID, double actualInput, double waterStorage,
 			double evapotranspiration,double drainage, double quick) throws SchemaException {
 
 		outHMActualInput.put(ID, new double[]{actualInput});
 		outHMStorage.put(ID, new double[]{waterStorage});
-		outHMRootUpTake.put(ID, new double[]{upTake});
 		outHMEvaporation.put(ID, new double[]{evapotranspiration});
 		outHMR.put(ID, new double[]{drainage});
 		outHMquick.put(ID, new double[]{quick});
