@@ -71,7 +71,7 @@ public class waterBudgetODE implements FirstOrderDifferentialEquations{
 
 		
 		
-		yDot[0] =rain-Math.max(0, (y[0]-s_CanopyMax))- Math.max(0, (ETp*Math.min(1,(y[0]-s_CanopyMax)/s_CanopyMax)));
+		yDot[0] =rain-Math.max(0, (y[0]-s_CanopyMax))- Math.max(0, (ETp*Math.min(1,(y[0])/s_CanopyMax)));
 		
 
 	}
