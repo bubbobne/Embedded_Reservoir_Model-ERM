@@ -24,8 +24,8 @@ public class TestRunoff{
 		String fId = "ID";
 
 		String inPathToPrec = "resources/Input/InputRO_1.csv";
-		String pathToQ= "resources/Output/runoff/Q_runoff_2.csv";
-		String pathToQint= "resources/Output/runoff/Q_runoff_3.csv";
+		String pathToQ= "resources/Output/runoff/Q_runoff_2_1.csv";
+		String pathToQint= "resources/Output/runoff/Q_runoff_3_1.csv";
 		
 
 
@@ -72,12 +72,10 @@ public class TestRunoff{
 			//waterBudgetRunoff.solver_model="dp853";
 			//waterBudgetRunoff.ET_model="AET";
 			waterBudgetRunoff.inRescaledDistance=width_sup;
-			waterBudgetRunoff.pCelerity=2;
+			waterBudgetRunoff.pCelerity=4;
 			waterBudgetRunoff.inTopindex=topIndex;
 			waterBudgetRunoff.pSat=20;
 			waterBudgetRunoff.inTimestep=timeStepMinutes;
-			waterBudgetRunoff.tStartDate=startDate;
-			waterBudgetRunoff.tEndDate=endDate;
 			waterBudgetRunoff.ID=1;
 			waterBudgetRunoff.alpha=1;
 			//waterBudgetRunoff.s_RunoffMax=4.60;

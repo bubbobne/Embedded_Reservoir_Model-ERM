@@ -16,12 +16,12 @@ public class TestGW{
 	@Test
 	public void testLinear() throws Exception {
 
-		String startDate = "1998-10-03 00:00";
+		String startDate = "1994-01-01 00:00";
 		String endDate = "1998-10-05 00:00";
 		int timeStepMinutes = 60*24;
 		String fId = "ID";
 
-		String inPathToPrec = "resources/Output/rootZone/R_drain_rz.csv";
+		String inPathToPrec = "resources/Input/rainfall.csv";
 		String pathToS= "resources/Output/gw/S_gw.csv.csv";
 		String pathToR= "resources/Output/gw/Q_gw.csv";
 
@@ -53,11 +53,11 @@ public class TestGW{
 		while( JReader.doProcess ) {
 		
 			waterBudget.solver_model="dp853";
-			waterBudget.a=400;
-			waterBudget.b=30;
-			waterBudget.timeStep=60*24;
+			waterBudget.a=350;
+			waterBudget.b=4.6;
+			waterBudget.timeStep=60;
 			waterBudget.A=5.2092;
-			waterBudget.Smax=500;
+			waterBudget.Smax=700;
 			
 
 			

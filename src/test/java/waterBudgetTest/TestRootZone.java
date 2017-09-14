@@ -16,14 +16,14 @@ public class TestRootZone{
 	@Test
 	public void testLinear() throws Exception {
 
-		String startDate = "1998-10-03 00:00";
-		String endDate = "1998-10-05 00:00";
-		int timeStepMinutes = 60*24;
+		String startDate = "1994-01-01 00:00";
+		String endDate = "1994-01-02 00:00";
+		int timeStepMinutes = 60;
 		String fId = "ID";
 
-		String inPathToPrec ="resources/Output/canopy/Q_Canopy.csv";
-		String inPathToET ="resources/Input/etp_1_daily.csv";
-		String inPathToEwc ="resources/Output/canopy/ET_Canopy.csv";
+		String inPathToPrec ="resources/Input/rainfall.csv";
+		String inPathToET ="resources/Input/ET.csv";
+		String inPathToEwc ="resources/Input/ET.csv";
 		String pathToS=  "resources/Output/rootZone/S_OUT_rz.csv";
 		String pathToET= "resources/Output/rootZone/ET_rz.csv";
 		String pathToR= "resources/Output/rootZone/R_drain_rz.csv";
@@ -64,11 +64,11 @@ public class TestRootZone{
 			waterBudget.solver_model="dp853";
 
 			
-			waterBudget.s_RootZoneMax=135.71401910395977;
-			waterBudget.Pmax=0.008326964780554214;
-			waterBudget.b_rz=1.29;
-			waterBudget.pB=0.1;
-			waterBudget.inTimestep=60*24;
+			waterBudget.s_RootZoneMax=394;
+			waterBudget.Pmax=0.000958;
+			waterBudget.b_rz=1.83;
+			waterBudget.pB=0.33;
+			waterBudget.inTimestep=60;
 			waterBudget.A=3.79;
 			
 
@@ -135,7 +135,7 @@ public class TestRootZone{
 		reader.file = inPath;
 		reader.idfield = "ID";
 		reader.tStart = startDate;
-		reader.tTimestep = 60*24;
+		reader.tTimestep = 60;
 		reader.tEnd = endDate;
 		reader.fileNovalue = "-9999";
 		reader.initProcess();
