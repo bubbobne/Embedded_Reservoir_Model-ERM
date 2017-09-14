@@ -99,14 +99,6 @@ public class WaterBudgetRunoff{
 	public double pSat;
 	
 
-	@Description("First date of the simulation")
-	@In
-	public String tStartDate;
-
-	@Description("Last date of the simulation")
-	@In
-	public String tEndDate;
-
 	@Description("The HashMap with the Actual input of the layer ")
 	@Out
 	public HashMap<Integer, double[]> outHMActualInput= new HashMap<Integer, double[]>() ;
@@ -156,7 +148,7 @@ public class WaterBudgetRunoff{
 	public void process() throws Exception {
 		//checkNull(inRainValues);
 
-
+		//System.out.println(pCelerity);
 
 		/** setting of the initial conditions*/
 		if(step==0){
@@ -192,11 +184,11 @@ public class WaterBudgetRunoff{
 		double Q=computeMean(runoff,inTimestep);
 		
 		//System.out.println("runoff:"+Q);
-		//double Q_mm=Q*conversion/(area);
+		double Q_mm=Q*conversion/(area);
 
 
 		/** Save the result in  hashmaps for each station*/
-		storeResult_series(ID,alpha*rain,Q,runoff);
+		storeResult_series(ID,alpha*rain,Q,Q_mm);
 
 		runoff=computeNewVector(runoff,inTimestep);
 
@@ -415,10 +407,11 @@ public class WaterBudgetRunoff{
 	 * @throws SchemaException the schema exception
 	 */
 
-	private void storeResult_series(int ID, double actualInput,double discharge, double[] vector ) throws SchemaException {
+	private void storeResult_series(int ID, double actualInput,double discharge, double discharge_mm ) throws SchemaException {
 		
 		outHMActualInput.put(ID, new double[]{actualInput});
 		outHMDischarge.put(ID, new double[]{discharge});
+		outHMDischarge_mm.put(ID,new double[]{discharge_mm});
 		
 		//
 		//for (int i=0;i<vector.length;i++){
