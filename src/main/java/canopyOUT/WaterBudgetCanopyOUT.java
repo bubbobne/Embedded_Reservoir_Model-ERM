@@ -142,22 +142,23 @@ public class WaterBudgetCanopyOUT{
 			double rain = inHMRain.get(ID)[0];
 			if (isNovalue(rain)) rain= 0;
 			if(step==0&rain==0)rain= 1;
+			
 
 
 			double LAI= inHMLAI.get(ID)[0];
 			if (isNovalue(LAI)) LAI= 3;
+			
 			
 			if(step==0){
 				
 					initialConditionS_i.put(ID,new double[]{kc_canopy_out*LAI/2});				
 			}
 
-
 			ETp=0;
 			if (inHMETp != null) ETp = inHMETp.get(ID)[0];
 			if (isNovalue(ETp)) ETp= 0;
 			
-			//System.out.println("kc"+kc_canopy_out);
+
 
 			double waterStorage=computeS((1-p)*rain,initialConditionS_i.get(ID)[0],LAI);
 			double actualInput=(1-p)*rain;
@@ -196,6 +197,8 @@ public class WaterBudgetCanopyOUT{
 	
 		/** Boundaries conditions*/
 		double[] y = new double[] {  S_i, s_CanopyMax };
+		
+		//System.out.println("kc_in"+kc_canopy_out);
 
 		/** Choice of the ODE solver */	
 		SolverODE solver;
@@ -204,13 +207,6 @@ public class WaterBudgetCanopyOUT{
 		/** result of the resolution of the ODE*/
 		S_i=(S_i<0.1&rain==0)?0:solver.integrateValues();
 
-		
-		/** Check of the Storage values: they cannot be negative*/
-		//if (S_i<0.1) S_i=0;
-		
-
-		
-		//System.out.println("Canopy_out:"+S_i);
 
 		return S_i;
 	}
@@ -229,7 +225,7 @@ public class WaterBudgetCanopyOUT{
 		double s_CanopyMax=kc_canopy_out*LAI;
 
 
-		double AET=Math.max(0, (ETp*Math.min(1,(S_i-s_CanopyMax)/s_CanopyMax)));	
+		double AET=Math.max(0, (ETp*Math.min(1,(S_i)/s_CanopyMax)));	
 		return AET;
 	}
 
