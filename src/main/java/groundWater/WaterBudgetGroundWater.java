@@ -171,8 +171,8 @@ public class WaterBudgetGroundWater{
 		/** Check of the Storage values: they cannot be negative*/
 		if (S_i<0) S_i=0;
 		
-		//System.out.println("GW:"+S_i);
-		//System.out.println("a:"+a+"b:"+b+"Smax:"+Smax);
+		if(S_i<1)System.out.println("gw"+a+"-"+b+"-"+Smax);
+
 
 		return S_i;
 	}
