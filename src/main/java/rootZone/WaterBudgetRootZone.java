@@ -125,6 +125,10 @@ public class WaterBudgetRootZone{
 	@Description("The output HashMap with the quick outflow ")
 	@Out
 	public HashMap<Integer, double[]> outHMquick= new HashMap<Integer, double[]>() ;
+	
+	@Description("The output HashMap with the quick outflow ")
+	@Out
+	public HashMap<Integer, double[]> outHMquick_mm= new HashMap<Integer, double[]>() ;
 
 	HashMap<Integer, double[]>initialConditionS_i= new HashMap<Integer, double[]>();
 	int step;
@@ -170,7 +174,7 @@ public class WaterBudgetRootZone{
 			
 			//System.out.println("Qc:"+rain);
 
-			double alpha=(rain==0)?0:alpha(initialConditionS_i.get(ID)[0],rain,s_RootZoneMax);
+			double alpha=(rain<0.001)?0:alpha(initialConditionS_i.get(ID)[0],rain,s_RootZoneMax);
 			
 			//System.out.println("alpha: "+ alpha);
 
@@ -207,7 +211,7 @@ public class WaterBudgetRootZone{
 			
 
 			/** Save the result in  hashmaps for each station*/
-			storeResult_series(ID,actualInput,waterStorage,evapotranspiration,drainage,quick);
+			storeResult_series(ID,actualInput,waterStorage,evapotranspiration,drainage,quick,alpha*rain);
 			
 			initialConditionS_i.put(ID,new double[]{waterStorage});
 			
@@ -237,6 +241,7 @@ public class WaterBudgetRootZone{
         double exp2 = (pB + 1.0);
         double xn = (pCmax / (pB + 1.0)) * (1.0 - (Math.pow(coeff2, exp2)));
         double UT2 = Math.max(Pval- UT1 - (xn - S_i), 0);
+        alpha=(UT1+UT2)/Pval;
  		return alpha=(UT1+UT2)/Pval;
  		
  		
@@ -274,6 +279,7 @@ public class WaterBudgetRootZone{
 		/** Check of the Storage values: they cannot be negative*/
 		//if (S_i<0) S_i=0;
 		
+		if(S_i<0.5)System.out.println("rootzone"+"-"+s_RootZoneMax+"-"+Pmax+"-"+b_rz);
 
 
 		return S_i;
@@ -321,13 +327,14 @@ public class WaterBudgetRootZone{
 	 */
 	
 	private void storeResult_series(int ID, double actualInput, double waterStorage,
-			double evapotranspiration,double drainage, double quick) throws SchemaException {
+			double evapotranspiration,double drainage, double quick, double quick_mm) throws SchemaException {
 
 		outHMActualInput.put(ID, new double[]{actualInput});
 		outHMStorage.put(ID, new double[]{waterStorage});
 		outHMEvaporation.put(ID, new double[]{evapotranspiration});
 		outHMR.put(ID, new double[]{drainage});
 		outHMquick.put(ID, new double[]{quick});
+		outHMquick_mm.put(ID, new double[]{quick_mm});
 
 	}
 	
