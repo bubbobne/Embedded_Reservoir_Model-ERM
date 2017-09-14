@@ -67,7 +67,7 @@ public class WFIUHKinematic {
 	 */
 	public double [] calculateQ() {
 
-		// tcorr is the concentration time in minutes
+		// tcorr is the concentration time in seconds
 		int tcorr =(int) widthFunction[widthFunction.length - 1][0];
 
 		// is the duration of the precipitation in minutes
