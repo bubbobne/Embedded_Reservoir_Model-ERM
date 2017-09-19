@@ -69,38 +69,40 @@ public class WFIUHKinematic {
 
 		// tcorr is the concentration time in seconds
 		int tcorr =(int) widthFunction[widthFunction.length - 1][0];
+		int tcorr_h=tcorr/3600;
 
-		// is the duration of the precipitation in minutes
+		// is the duration of the precipitation in seconds
 		int tpmax =inTimestep*60;
-		tpmax=(tpmax>tcorr)?tcorr:tpmax;
+		int tpmax_h =inTimestep/60;
+		tpmax_h=(tpmax_h>tcorr_h)?tcorr_h:tpmax_h;
 		
 
 
 		//is the discharge computed in m^3/s according to the WFIUH at time step i+1 (i1)
-		double[] Q_i1 = new double[(int) tcorr + tpmax + 1];
+		double[] Q_i1 = new double[(int) tcorr_h + tpmax_h + 1];
 
 
-		for( int t = 1; t <= tcorr; t += 1 ) {
+		for( int t = 1; t <= tcorr_h; t += 1 ) {
 
-			if (t <= tpmax) {
+			if (t <= tpmax_h) {
 
-				Q_i1[t]=(double) (inputFluxes* area*ModelsEngine.width_interpolate(widthFunction, t, 0, 2));
+				Q_i1[t]=(double) (inputFluxes* area*ModelsEngine.width_interpolate(widthFunction, t*3600, 0, 2));
 
 
 
 			} else {
-				Q_i1[t]= (double) (inputFluxes *area* (ModelsEngine.width_interpolate(widthFunction, t, 0, 2) - ModelsEngine
-						.width_interpolate(widthFunction, t - tpmax, 0, 2)));
+				Q_i1[t]= (double) (inputFluxes *area* (ModelsEngine.width_interpolate(widthFunction, t*3600, 0, 2) - ModelsEngine
+						.width_interpolate(widthFunction, t*3600 - tpmax, 0, 2)));
 			}
 
 		}
 		
 		
 		
-        for( int t = tcorr; t < (tcorr + tpmax); t += 1 ) {
+        for( int t = tcorr_h; t < (tcorr_h + tpmax_h); t += 1 ) {
             
         	Q_i1[t] = (double) (inputFluxes * area*(widthFunction[widthFunction.length - 1][2] 
-            		- ModelsEngine.width_interpolate(widthFunction, t - tpmax, 0, 2)));
+            		- ModelsEngine.width_interpolate(widthFunction, t*3600 - tpmax, 0, 2)));
         }
         
 

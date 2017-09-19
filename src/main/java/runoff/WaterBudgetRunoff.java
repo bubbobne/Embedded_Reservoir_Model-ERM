@@ -160,7 +160,7 @@ public class WaterBudgetRunoff{
 			// and its timeStep,  plus the length of the width function/60, since we want minute intervals
 
 			// now is in minutes
-			runoff=new double [(int) widthFunction[widthFunction.length - 1][0] +inTimestep*60 + 1];
+			runoff=new double [(int) widthFunction[widthFunction.length - 1][0]/3600 +inTimestep/60 + 1];
 
 		}
 
@@ -181,16 +181,16 @@ public class WaterBudgetRunoff{
 
 		/** The output of the previous computation in the average discharge in 1 minute in m^3/s 
 		 * so we need the compute the hourly average */
-		double Q=computeMean(runoff,inTimestep);
+		//double Q=computeMean(runoff,inTimestep);
 		
 		//System.out.println("runoff:"+Q);
-		double Q_mm=Q*conversion/(area);
+		double Q_mm=runoff[0]*conversion/(area);
 
 
 		/** Save the result in  hashmaps for each station*/
-		storeResult_series(ID,alpha*rain,Q,Q_mm);
+		storeResult_series(ID,alpha*rain,runoff[0],Q_mm);
 
-		runoff=computeNewVector(runoff,inTimestep);
+		runoff=computeNewVector(runoff,inTimestep/60);
 
 		step++;
 
@@ -253,7 +253,7 @@ public class WaterBudgetRunoff{
 
 	public double [] computeNewVector (double [] runoff,int inTimeStep){
 		
-		inTimeStep=inTimeStep*60;
+		//inTimeStep=inTimeStep*60;
 		
 		for (int i=0;i<runoff.length;i++){
 			if (i<runoff.length-inTimeStep){

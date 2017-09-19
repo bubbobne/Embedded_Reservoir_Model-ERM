@@ -19,13 +19,13 @@ public class TestRunoff{
 	public void testLinear() throws Exception {
 
 		String startDate = "1997-01-01 00:00";
-		String endDate = "1997-01-01 05:00";
+		String endDate = "1997-01-01 15:00";
 		int timeStepMinutes = 60;
 		String fId = "ID";
 
 		String inPathToPrec = "resources/Input/InputRO_1.csv";
-		String pathToQ= "resources/Output/runoff/Q_runoff_2_1.csv";
-		String pathToQint= "resources/Output/runoff/Q_runoff_3_1.csv";
+		String pathToQ= "resources/Output/runoff/Q_runoff.csv";
+		String pathToQmm= "resources/Output/runoff/Q_runoff_mm.csv";
 		
 
 
@@ -42,7 +42,7 @@ public class TestRunoff{
 		writerQ.fileNovalue="-9999";
 		
 		
-		writerQint.file = pathToQint;
+		writerQint.file = pathToQmm;
 		writerQint.tStart = startDate;
 		writerQint.tTimestep = timeStepMinutes;
 		writerQint.fileNovalue="-9999";
@@ -68,17 +68,14 @@ public class TestRunoff{
 
 
 		while( JReader.doProcess ) {
-		
-			//waterBudgetRunoff.solver_model="dp853";
-			//waterBudgetRunoff.ET_model="AET";
+
 			waterBudgetRunoff.inRescaledDistance=width_sup;
-			waterBudgetRunoff.pCelerity=4;
+			waterBudgetRunoff.pCelerity=0.4;
 			waterBudgetRunoff.inTopindex=topIndex;
 			waterBudgetRunoff.pSat=20;
 			waterBudgetRunoff.inTimestep=timeStepMinutes;
 			waterBudgetRunoff.ID=1;
 			waterBudgetRunoff.alpha=1;
-			//waterBudgetRunoff.s_RunoffMax=4.60;
 			
 			JReader.nextRecord();
 			
@@ -88,7 +85,7 @@ public class TestRunoff{
 			waterBudgetRunoff.process();
             
             HashMap<Integer, double[]> outHMDischarge = waterBudgetRunoff.outHMDischarge;
-            HashMap<Integer, double[]> outHMDischargeint = waterBudgetRunoff.outHMDischarge_mm;
+            HashMap<Integer, double[]> outHMDischarge_mm = waterBudgetRunoff.outHMDischarge_mm;
 
 			
 			writerQ.inData = outHMDischarge;
@@ -98,10 +95,10 @@ public class TestRunoff{
 				writerQ.close();
 			}
 			
-			writerQint.inData = outHMDischargeint;
+			writerQint.inData = outHMDischarge_mm;
 			writerQint.writeNextLine();
 			
-			if (pathToQint != null) {
+			if (pathToQmm != null) {
 				writerQint.close();
 			}
           
