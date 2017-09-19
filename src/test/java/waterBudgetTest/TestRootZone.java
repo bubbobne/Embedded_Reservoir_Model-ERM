@@ -17,7 +17,7 @@ public class TestRootZone{
 	public void testLinear() throws Exception {
 
 		String startDate = "1994-01-01 00:00";
-		String endDate = "1994-01-02 00:00";
+		String endDate = "1995-01-01 00:00";
 		int timeStepMinutes = 60;
 		String fId = "ID";
 
