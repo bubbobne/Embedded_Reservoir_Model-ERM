@@ -35,6 +35,8 @@ public class waterBudgetODE implements FirstOrderDifferentialEquations{
 	public double b;
 
 	public double recharge;
+	
+	public double Smax_ro;
 
 	
 	
@@ -47,10 +49,11 @@ public class waterBudgetODE implements FirstOrderDifferentialEquations{
 	 * @param recharge: input recharge value
 	 * @param Qmod: the modeled input discharge
 	 */
-	public waterBudgetODE(double recharge, double a, double b) {
+	public waterBudgetODE(double recharge, double a, double b, double Smax_ro) {
 		this.a=a;
 		this.b=b;
 		this.recharge=recharge;
+		this.Smax_ro=Smax_ro;
 
 	}
 	
@@ -66,7 +69,7 @@ public class waterBudgetODE implements FirstOrderDifferentialEquations{
 	 */
 	public void computeDerivatives(double t, double[] y, double[] yDot)
 			throws MaxCountExceededException, DimensionMismatchException {
-		yDot[0] =recharge-a*Math.pow(y[0], b);
+		yDot[0] =recharge-a*Math.pow(y[0]/Smax_ro, b);
 		
 
 	

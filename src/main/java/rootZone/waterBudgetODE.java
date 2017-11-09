@@ -72,7 +72,7 @@ public class waterBudgetODE implements FirstOrderDifferentialEquations{
 	 */
 	public void computeDerivatives(double t, double[] y, double[] yDot)
 			throws MaxCountExceededException, DimensionMismatchException {
-		yDot[0] =actualInput-Math.max(0, (ETp*Math.min(1,1.33*(y[0]/s_RootZoneMax))))-Pmax*Math.pow(y[0], b_rz);
+		yDot[0] =actualInput-Math.max(0, (ETp*Math.min(1,1.33*(y[0]/s_RootZoneMax))))-Pmax*Math.pow(y[0]/s_RootZoneMax, b_rz);
 		//System.out.println("y"+yDot[0]);
 	
 	}

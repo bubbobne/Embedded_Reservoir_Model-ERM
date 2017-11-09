@@ -63,6 +63,8 @@ public class WaterBudgetCanopyOUT{
 	@Description("Leaf Area Index Hashmap")
 	@In
 	public  HashMap<Integer, double[]> inHMLAI;
+	
+	//double LAI=1;
 
 
 	@Description("coefficient canopy out")
@@ -146,12 +148,14 @@ public class WaterBudgetCanopyOUT{
 
 
 			double LAI= inHMLAI.get(ID)[0];
-			if (isNovalue(LAI)) LAI= 3;
+			if (isNovalue(LAI))	LAI=0.6;		
+			//} else LAI=LAI_t;
 			
 			
 			if(step==0){
 				
-					initialConditionS_i.put(ID,new double[]{kc_canopy_out*LAI/2});				
+					initialConditionS_i.put(ID,new double[]{kc_canopy_out*LAI/2});	
+					System.out.println("kc_in"+kc_canopy_out);
 			}
 
 			ETp=0;
@@ -198,7 +202,7 @@ public class WaterBudgetCanopyOUT{
 		/** Boundaries conditions*/
 		double[] y = new double[] {  S_i, s_CanopyMax };
 		
-		//System.out.println("kc_in"+kc_canopy_out);
+		
 
 		/** Choice of the ODE solver */	
 		SolverODE solver;
@@ -206,7 +210,9 @@ public class WaterBudgetCanopyOUT{
 
 		/** result of the resolution of the ODE*/
 		S_i=(S_i<0.1&rain==0)?0:solver.integrateValues();
-
+		
+		S_i=(S_i<0)?0:S_i;
+		//if (S_i<0.1)System.out.println("canopy"+S_i);
 
 		return S_i;
 	}

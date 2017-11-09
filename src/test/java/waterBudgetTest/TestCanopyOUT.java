@@ -15,8 +15,8 @@ public class TestCanopyOUT{
 	@Test
 	public void testLinear() throws Exception {
 
-		String startDate = "1998-10-03 00:00";
-		String endDate = "1998-10-05 00:00";
+		String startDate = "1998-11-03 00:00";
+		String endDate = "1998-11-07 00:00";
 		int timeStepMinutes = 60*24;
 		String fId = "ID";
 		

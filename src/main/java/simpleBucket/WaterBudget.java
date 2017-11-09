@@ -72,7 +72,7 @@ public class WaterBudget{
 	
 	@Description("Smax")
 	@In
-	public double Smax=10;
+	public double Smax_ro=10;
 
 
 	@Description("ODE solver model: dp853, Eulero ")
@@ -113,7 +113,8 @@ public class WaterBudget{
 		if(step==0){
 			for (Entry<Integer, double[]> entry : entrySet){
 				Integer ID = entry.getKey();
-				initialConditionS_i.put(ID,new double[]{Smax/2});
+				initialConditionS_i.put(ID,new double[]{Smax_ro/2});
+				System.out.println("ro"+a_ro+"-"+b_ro+"-"+Smax_ro);
 			}
 		}
 
@@ -156,10 +157,10 @@ public class WaterBudget{
 
 
 		/** Creation of the differential equation*/
-		FirstOrderDifferentialEquations ode=new waterBudgetODE(recharge,a_ro,b_ro);			
+		FirstOrderDifferentialEquations ode=new waterBudgetODE(recharge,a_ro,b_ro,Smax_ro);			
 
 		/** Boundaries conditions*/
-		double[] y = new double[] { S_i, Smax };
+		double[] y = new double[] { S_i, Smax_ro };
 
 		/** Choice of the ODE solver */	
 		SolverODE solver;
@@ -171,7 +172,7 @@ public class WaterBudget{
 		/** Check of the Storage values: they cannot be negative*/
 		if (S_i<0) S_i=0;
 		
-		//if(S_i<1)System.out.println("ro"+a_ro+"-"+b_ro+"-"+Smax);
+		//if(S_i<1)System.out.println("ro"+a_ro+"-"+b_ro+"-"+Smax_ro);
 
 
 		return S_i;
@@ -185,7 +186,7 @@ public class WaterBudget{
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public double computeQ(double S_i) throws IOException {
-		double Q=a_ro*Math.pow(S_i,b_ro);
+		double Q=a_ro*Math.pow(S_i/Smax_ro,b_ro);
 		return Q;
 	}
 

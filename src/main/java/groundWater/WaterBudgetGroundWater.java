@@ -113,7 +113,8 @@ public class WaterBudgetGroundWater{
 		if(step==0){
 			for (Entry<Integer, double[]> entry : entrySet){
 				Integer ID = entry.getKey();
-				initialConditionS_i.put(ID,new double[]{Smax/2});
+				initialConditionS_i.put(ID,new double[]{5});
+				System.out.println("gw"+a+"-"+b+"-"+Smax);
 			}
 		}
 
@@ -171,7 +172,7 @@ public class WaterBudgetGroundWater{
 		/** Check of the Storage values: they cannot be negative*/
 		if (S_i<0) S_i=0;
 		
-		if(S_i<1)System.out.println("gw"+a+"-"+b+"-"+Smax);
+		if(S_i<0.01)System.out.println("gw"+a+"-"+b+"-"+Smax);
 
 
 		return S_i;

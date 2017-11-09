@@ -158,6 +158,10 @@ public class WaterBudgetRootZone{
 			for (Entry<Integer, double[]> entry : entrySet){
 				Integer ID = entry.getKey();
 				initialConditionS_i.put(ID,new double[]{s_RootZoneMax/2});
+				System.out.println("P:"+Pmax );
+				//System.out.println("input:"+actualInput );
+				System.out.println("b:"+b_rz );
+				System.out.println("pB:"+pB );
 			}
 		}
 
@@ -185,10 +189,7 @@ public class WaterBudgetRootZone{
 			
 			//System.out.println("RZmax:"+s_RootZoneMax );
 			
-			//System.out.println("P:"+Pmax );
-			//System.out.println("input:"+actualInput );
-			//System.out.println("b:"+b_rz );
-			//System.out.println("pB:"+pB );
+
 			
 			
 
@@ -279,7 +280,7 @@ public class WaterBudgetRootZone{
 		/** Check of the Storage values: they cannot be negative*/
 		//if (S_i<0) S_i=0;
 		
-		if(S_i<0.5)System.out.println("rootzone"+"-"+s_RootZoneMax+"-"+Pmax+"-"+b_rz);
+		//if(S_i<0.5)System.out.println("rootzone"+"-"+s_RootZoneMax+"-"+Pmax+"-"+b_rz);
 
 
 		return S_i;
@@ -295,7 +296,7 @@ public class WaterBudgetRootZone{
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public double computeR(double S_i) throws IOException {
-		double Rg=Pmax*Math.pow(S_i, b_rz);
+		double Rg=Pmax*Math.pow(S_i/s_RootZoneMax, b_rz);
 		return Rg;
 	}
 
