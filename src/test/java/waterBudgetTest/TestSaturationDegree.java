@@ -9,6 +9,7 @@ import org.jgrasstools.gears.io.rasterwriter.OmsRasterWriter;
 import org.jgrasstools.gears.io.timedependent.OmsTimeSeriesIteratorReader;
 import org.junit.*;
 
+import saturationDegree.PathGenerator;
 //import pathGenerator.PathGenerator;
 import saturationDegree.SaturationDegree;
 
@@ -26,7 +27,7 @@ public class TestSaturationDegree{
 
 
 		OmsRasterReader subReader = new OmsRasterReader();
-		subReader.file = "/Users/marialaura/Dropbox/dati_NewAge/EsercitazioniIdrologia2017/output/geomorphology/subbasins_cut_basento_mary.asc";
+		subReader.file = "resources/Input/subbasins_cut_basento_mary.asc";
 		subReader.fileNovalue = -9999.0;
 		subReader.geodataNovalue = Double.NaN;
 		subReader.process();
@@ -37,13 +38,13 @@ public class TestSaturationDegree{
 		int timeStepMinutes = 60;
 		String fId = "ID";
 
-		String inPathToStorage ="/Users/marialaura/Dropbox/dati_NewAge/EsercitazioniIdrologia2017/output/Basento/Storage/Stot_musk_10.csv";
+		String inPathToStorage ="resources/Input/Storage_10_Bas.csv";
 
 		OmsTimeSeriesIteratorReader storageReader = getTimeseriesReader(inPathToStorage, fId, startDate, endDate, timeStepMinutes);
 
 
 		SaturationDegree test =new SaturationDegree();
-		//PathGenerator path=new PathGenerator();
+		PathGenerator path=new PathGenerator();
 
 		test.inSubbasins=sub;
 		test.Smax=1;
@@ -62,9 +63,9 @@ public class TestSaturationDegree{
 
 			test.process();
 
-			//path.pathToOutData="/Users/marialaura/Dropbox/dati_NewAge/EsercitazioniIdrologia2017/output/Basento/Storage/S.asc";
-			//path.tCurrent=storageReader.tCurrent;
-			//path.process();
+			path.pathToOutData="resources/Output/Storage/S.asc";
+			path.tCurrent=storageReader.tCurrent;
+			path.process();
 
 
 
@@ -72,17 +73,16 @@ public class TestSaturationDegree{
 			outDataGrid  =  test.outSaturationDataGrid;
 
 
-			GridCoverage2D krigingRaster = test.outSaturationDataGrid;
+			GridCoverage2D SRaster = test.outSaturationDataGrid;
 
 			OmsRasterWriter writerRaster = new OmsRasterWriter();
-			writerRaster.inRaster = krigingRaster;
-			//writerRaster.file = path.pathOutDataComplete;
+			writerRaster.inRaster = SRaster;
+			writerRaster.file = path.pathOutDataComplete;
 			writerRaster.process();
 
 		}
 
 		storageReader.close();
-		// writer.close();
 
 
 	}
