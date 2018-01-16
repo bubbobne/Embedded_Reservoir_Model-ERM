@@ -25,7 +25,9 @@ public class TestCanopyOUT{
 
 		String inPathToPrec = "resources/Input/Melting_1.csv";
 		String inPathToET ="resources/Input/etp_1_daily.csv";
-		String inPathToLAI= "resources/Input/LAI_1_daily.csv";		
+		String inPathToLAI= "resources/Input/LAI_1_daily.csv";	
+		String inPathToCI ="resources/Input/S_Canopy.csv";
+
 		
 		String pathToS= "resources/Output/canopy/S_Canopy.csv";
 		String pathToET= "resources/Output/canopy/ET_Canopy.csv";
@@ -35,6 +37,7 @@ public class TestCanopyOUT{
 		OmsTimeSeriesIteratorReader ETReader = getTimeseriesReader(inPathToET, fId, startDate, endDate, timeStepMinutes);
 		OmsTimeSeriesIteratorReader RainReader = getTimeseriesReader(inPathToPrec, fId, startDate, endDate, timeStepMinutes);
 		OmsTimeSeriesIteratorReader LAIReader = getTimeseriesReader(inPathToLAI, fId, startDate, endDate, timeStepMinutes);
+		OmsTimeSeriesIteratorReader CIReader = getTimeseriesReader(inPathToCI, fId, startDate, startDate, timeStepMinutes);
 
 		
 		OmsTimeSeriesIteratorWriter writerS = new OmsTimeSeriesIteratorWriter();
@@ -69,7 +72,7 @@ public class TestCanopyOUT{
 		    waterBudget.p=0.65;	
 			waterBudget.solver_model="dp853";
 			waterBudget.kc_canopy_out= 0.25;
-			waterBudget.IntialConditionStorage=0.001;
+
 
 
 			
@@ -78,6 +81,9 @@ public class TestCanopyOUT{
 			HashMap<Integer, double[]> id2ValueMap = RainReader.outData;
 			waterBudget.inHMRain= id2ValueMap;
 			
+            CIReader.nextRecord();
+            id2ValueMap = CIReader.outData;
+            waterBudget.initialConditionS_i = id2ValueMap;
             
             ETReader.nextRecord();
             id2ValueMap = ETReader.outData;

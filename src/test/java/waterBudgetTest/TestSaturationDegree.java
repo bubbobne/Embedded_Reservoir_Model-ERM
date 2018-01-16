@@ -9,7 +9,7 @@ import org.jgrasstools.gears.io.rasterwriter.OmsRasterWriter;
 import org.jgrasstools.gears.io.timedependent.OmsTimeSeriesIteratorReader;
 import org.junit.*;
 
-import pathGenerator.PathGenerator;
+//import pathGenerator.PathGenerator;
 import saturationDegree.SaturationDegree;
 
 /**
@@ -32,20 +32,21 @@ public class TestSaturationDegree{
 		subReader.process();
 		GridCoverage2D sub = subReader.outRaster;
 
-		String startDate = "2013-12-15 00:00" ;
-		String endDate = "2013-12-15 02:00";
+		String startDate = "2014-01-07 19:00" ;
+		String endDate = "2014-01-07 20:00";
 		int timeStepMinutes = 60;
 		String fId = "ID";
 
-		String inPathToStorage ="/Users/marialaura/Dropbox/dati_NewAge/EsercitazioniIdrologia2017/output/Basento/Srz_1.csv";
+		String inPathToStorage ="/Users/marialaura/Dropbox/dati_NewAge/EsercitazioniIdrologia2017/output/Basento/Storage/Stot_musk_10.csv";
 
 		OmsTimeSeriesIteratorReader storageReader = getTimeseriesReader(inPathToStorage, fId, startDate, endDate, timeStepMinutes);
 
 
 		SaturationDegree test =new SaturationDegree();
-		PathGenerator path=new PathGenerator();
+		//PathGenerator path=new PathGenerator();
 
 		test.inSubbasins=sub;
+		test.Smax=1;
 
 		while( storageReader.doProcess) { 
 
@@ -61,9 +62,9 @@ public class TestSaturationDegree{
 
 			test.process();
 
-			path.pathToOutData="/Users/marialaura/Dropbox/dati_NewAge/EsercitazioniIdrologia2017/output/Basento/S.asc";
-			path.tCurrent=storageReader.tCurrent;
-			path.process();
+			//path.pathToOutData="/Users/marialaura/Dropbox/dati_NewAge/EsercitazioniIdrologia2017/output/Basento/Storage/S.asc";
+			//path.tCurrent=storageReader.tCurrent;
+			//path.process();
 
 
 
@@ -75,7 +76,7 @@ public class TestSaturationDegree{
 
 			OmsRasterWriter writerRaster = new OmsRasterWriter();
 			writerRaster.inRaster = krigingRaster;
-			writerRaster.file = path.pathOutDataComplete;
+			//writerRaster.file = path.pathOutDataComplete;
 			writerRaster.process();
 
 		}

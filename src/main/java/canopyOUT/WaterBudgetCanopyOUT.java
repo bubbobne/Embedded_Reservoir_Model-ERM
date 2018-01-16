@@ -58,6 +58,10 @@ public class WaterBudgetCanopyOUT{
 
 	@Description("ETp: Potential evaopotranspiration value for the given time considered")
 	double ETp;
+	
+	@Description("Input CI Hashmap")
+	@In
+	public HashMap<Integer, double[]>initialConditionS_i;
 
 
 	@Description("Leaf Area Index Hashmap")
@@ -72,9 +76,6 @@ public class WaterBudgetCanopyOUT{
 	public double kc_canopy_out ;
 
 
-	@Description("Initial condition storage")
-	@In
-	public double IntialConditionStorage=0.00001;
 
 	@Description("Partitioning coefficient free throughfall")
 	@In
@@ -114,8 +115,9 @@ public class WaterBudgetCanopyOUT{
 	@Out
 	public  HashMap<Integer, double[]> outHMAET= new HashMap<Integer, double[]>() ;
 
-	HashMap<Integer, double[]>initialConditionS_i= new HashMap<Integer, double[]>();
 	int step;
+
+	double CI;
 
 
 
@@ -152,10 +154,9 @@ public class WaterBudgetCanopyOUT{
 			//} else LAI=LAI_t;
 			
 			
-			if(step==0){
-				
-					initialConditionS_i.put(ID,new double[]{kc_canopy_out*LAI/2});	
-					System.out.println("kc_in"+kc_canopy_out);
+			if(step==0){				
+				CI=initialConditionS_i.get(ID)[0];
+				System.out.println("kc_in"+kc_canopy_out);
 			}
 
 			ETp=0;
@@ -164,7 +165,7 @@ public class WaterBudgetCanopyOUT{
 			
 
 
-			double waterStorage=computeS((1-p)*rain,initialConditionS_i.get(ID)[0],LAI);
+			double waterStorage=computeS((1-p)*rain,CI,LAI);
 			double actualInput=(1-p)*rain;
 			double actualOutput=computeThroughfall((1-p)*rain,waterStorage,LAI);
 			double throughfall=actualOutput+p*rain;			
@@ -173,7 +174,7 @@ public class WaterBudgetCanopyOUT{
 			/** Save the result in  hashmaps for each station*/
 			storeResult_series(ID,waterStorage,throughfall, AET, actualInput,actualOutput);
 
-			initialConditionS_i.put(ID,new double[]{waterStorage});
+			CI=waterStorage;
 
 		}
 

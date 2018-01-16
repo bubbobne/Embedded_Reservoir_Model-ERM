@@ -51,6 +51,10 @@ public class WaterBudget{
 	@In
 	public HashMap<Integer, double[]> inHMRechargeValues;
 	
+	@Description("Input CI Hashmap")
+	@In
+	public HashMap<Integer, double[]>initialConditionS_i;
+	
 	
 	@Description("Time Step simulation")
 	@In
@@ -91,8 +95,9 @@ public class WaterBudget{
 	@Out
 	public HashMap<Integer, double[]> outHMDischarge_mm= new HashMap<Integer, double[]>() ;
 
-	HashMap<Integer, double[]>initialConditionS_i= new HashMap<Integer, double[]>();
 	int step;
+	
+	double CI;
 
 
 	/**
@@ -110,17 +115,16 @@ public class WaterBudget{
 		Set<Entry<Integer, double[]>> entrySet = inHMRechargeValues.entrySet();
 
 
-		if(step==0){
-			for (Entry<Integer, double[]> entry : entrySet){
-				Integer ID = entry.getKey();
-				initialConditionS_i.put(ID,new double[]{Smax_ro/2});
-				System.out.println("ro"+a_ro+"-"+b_ro+"-"+Smax_ro);
-			}
-		}
+
 
 		// iterate over the station
 		for( Entry<Integer, double[]> entry : entrySet ) {
 			Integer ID = entry.getKey();
+			
+			if(step==0){
+					CI=initialConditionS_i.get(ID)[0];
+					System.out.println("ro"+a_ro+"-"+b_ro+"-"+Smax_ro);
+			}
 
 			/**Input data reading*/
 			double recharge = inHMRechargeValues.get(ID)[0];
@@ -128,7 +132,7 @@ public class WaterBudget{
 			if(step==0&recharge==0)recharge= 1;
 
 
-			double waterStorage=computeS(recharge,initialConditionS_i.get(ID)[0]);
+			double waterStorage=computeS(recharge,CI);
 			double discharge_mm=computeQ(waterStorage);
 			
 			double discharge=discharge_mm/1000*A*Math.pow(10, 6)/(60*timeStep);		
@@ -136,7 +140,7 @@ public class WaterBudget{
 			/** Save the result in  hashmaps for each station*/
 			storeResult_series(ID,waterStorage,discharge,discharge_mm);
 
-			initialConditionS_i.put(ID,new double[]{waterStorage});
+			CI=waterStorage;
 
 		}
 

@@ -59,7 +59,9 @@ public class WaterBudgetRootZone{
 	@In
 	public HashMap<Integer, double[]> inHMETp;
 
-
+	@Description("Input CI Hashmap")
+	@In
+	public HashMap<Integer, double[]>initialConditionS_i;
 
 	@Description("The maximum storage capacity")
 	@In
@@ -130,10 +132,10 @@ public class WaterBudgetRootZone{
 	@Out
 	public HashMap<Integer, double[]> outHMquick_mm= new HashMap<Integer, double[]>() ;
 
-	HashMap<Integer, double[]>initialConditionS_i= new HashMap<Integer, double[]>();
+	
 	int step;
 
-
+	double CI;
 
 
     
@@ -154,20 +156,20 @@ public class WaterBudgetRootZone{
 		Set<Entry<Integer, double[]>> entrySet = inHMRain.entrySet();
 
 
-		if(step==0){
-			for (Entry<Integer, double[]> entry : entrySet){
-				Integer ID = entry.getKey();
-				initialConditionS_i.put(ID,new double[]{s_RootZoneMax/2});
-				System.out.println("P:"+Pmax );
-				//System.out.println("input:"+actualInput );
-				System.out.println("b:"+b_rz );
-				System.out.println("pB:"+pB );
-			}
-		}
+
 
 		// iterate over the station
 		for( Entry<Integer, double[]> entry : entrySet ) {
 			Integer ID = entry.getKey();
+			
+			if(step==0){
+					CI=initialConditionS_i.get(ID)[0];					
+					//initialConditionS_i.put(ID,new double[]{s_RootZoneMax/2});
+					System.out.println("P:"+Pmax );
+					//System.out.println("input:"+actualInput );
+					System.out.println("b:"+b_rz );
+					System.out.println("pB:"+pB );
+			}
 			
 			//System.out.println(ID);
 
@@ -178,7 +180,7 @@ public class WaterBudgetRootZone{
 			
 			//System.out.println("Qc:"+rain);
 
-			double alpha=(rain<0.001)?0:alpha(initialConditionS_i.get(ID)[0],rain,s_RootZoneMax);
+			double alpha=(rain<0.001)?0:alpha(CI,rain,s_RootZoneMax);
 			
 			//System.out.println("alpha: "+ alpha);
 
@@ -203,7 +205,7 @@ public class WaterBudgetRootZone{
 			
 			double ETpNet=ETp-Ewc;
 
-			double waterStorage=computeS(actualInput,initialConditionS_i.get(ID)[0], ETpNet);
+			double waterStorage=computeS(actualInput,CI, ETpNet);
 			
 			double evapotranspiration=computeAET(waterStorage, ETpNet);
 						
@@ -214,7 +216,9 @@ public class WaterBudgetRootZone{
 			/** Save the result in  hashmaps for each station*/
 			storeResult_series(ID,actualInput,waterStorage,evapotranspiration,drainage,quick,alpha*rain);
 			
-			initialConditionS_i.put(ID,new double[]{waterStorage});
+			//initialConditionS_i.put(ID,new double[]{waterStorage});
+			
+			CI=waterStorage;
 			
 
 		}

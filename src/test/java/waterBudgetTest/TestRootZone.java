@@ -17,19 +17,22 @@ public class TestRootZone{
 	public void testLinear() throws Exception {
 
 		String startDate = "1994-01-01 00:00";
-		String endDate = "1995-01-01 00:00";
+		String endDate = "1994-02-01 00:00";
 		int timeStepMinutes = 60;
 		String fId = "ID";
 
 		String inPathToPrec ="resources/Input/rainfall.csv";
 		String inPathToET ="resources/Input/ET.csv";
 		String inPathToEwc ="resources/Input/ET.csv";
+		String inPathToCI ="resources/Input/S_OUT_rz.csv";
 		String pathToS=  "resources/Output/rootZone/S_OUT_rz.csv";
 		String pathToET= "resources/Output/rootZone/ET_rz.csv";
 		String pathToR= "resources/Output/rootZone/R_drain_rz.csv";
 
 		
 		OmsTimeSeriesIteratorReader JReader = getTimeseriesReader(inPathToPrec, fId, startDate, endDate, timeStepMinutes);
+		OmsTimeSeriesIteratorReader CIReader = getTimeseriesReader(inPathToCI, fId, startDate, startDate, timeStepMinutes);
+
 		OmsTimeSeriesIteratorReader EwcReader = getTimeseriesReader(inPathToEwc, fId, startDate, endDate, timeStepMinutes);
 		OmsTimeSeriesIteratorReader ETReader = getTimeseriesReader(inPathToET, fId, startDate, endDate, timeStepMinutes);
 		OmsTimeSeriesIteratorWriter writerS = new OmsTimeSeriesIteratorWriter();
@@ -77,6 +80,10 @@ public class TestRootZone{
 			
 			HashMap<Integer, double[]> id2ValueMap = JReader.outData;
 			waterBudget.inHMRain = id2ValueMap;
+			
+            CIReader.nextRecord();
+            id2ValueMap = CIReader.outData;
+            waterBudget.initialConditionS_i = id2ValueMap;
 			
 
             

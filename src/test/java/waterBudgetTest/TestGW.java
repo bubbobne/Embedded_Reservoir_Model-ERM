@@ -22,11 +22,14 @@ public class TestGW{
 		String fId = "ID";
 
 		String inPathToPrec = "resources/Input/rainfall.csv";
-		String pathToS= "resources/Output/gw/S_gw.csv.csv";
+		String inPathToCI ="resources/Input/S_gw.csv";
+
+		String pathToS= "resources/Output/gw/S_gw.csv";
 		String pathToR= "resources/Output/gw/Q_gw.csv";
 
 		
 		OmsTimeSeriesIteratorReader JReader = getTimeseriesReader(inPathToPrec, fId, startDate, endDate, timeStepMinutes);
+		OmsTimeSeriesIteratorReader CIReader = getTimeseriesReader(inPathToCI, fId, startDate, startDate, timeStepMinutes);
 
 		OmsTimeSeriesIteratorWriter writerS = new OmsTimeSeriesIteratorWriter();
 
@@ -65,6 +68,10 @@ public class TestGW{
 			
 			HashMap<Integer, double[]> id2ValueMap = JReader.outData;
 			waterBudget.inHMRechargeValues = id2ValueMap;
+			
+            CIReader.nextRecord();
+            id2ValueMap = CIReader.outData;
+            waterBudget.initialConditionS_i = id2ValueMap;
 			
 
 

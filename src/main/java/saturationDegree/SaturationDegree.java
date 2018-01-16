@@ -53,6 +53,9 @@ public class SaturationDegree extends JGTModel {
 	@In
 	public HashMap<Integer, double[]> inHMStorage;	
 
+	
+	@In
+	public double Smax;
 
 	@Description("The mean hourly air temperature. ")
 	@In
@@ -109,7 +112,7 @@ public class SaturationDegree extends JGTModel {
 					int IDsub=(int) SubbasinsMap.getSampleDouble(c, r, 0);
 
 					if(ID==IDsub){
-						iter.setSample(c, r, 0, storage);
+						iter.setSample(c, r, 0, storage/Smax);
 					}else{}
 
 
