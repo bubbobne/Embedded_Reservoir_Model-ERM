@@ -67,7 +67,7 @@ public class TestRootZone{
 			waterBudget.solver_model="dp853";
 
 			
-			waterBudget.s_RootZoneMax=394;
+			waterBudget.s_RootZoneMax=4;
 			waterBudget.Pmax=0.000958;
 			waterBudget.b_rz=1.83;
 			waterBudget.pB=0.33;

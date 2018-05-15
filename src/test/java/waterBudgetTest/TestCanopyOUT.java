@@ -81,9 +81,9 @@ public class TestCanopyOUT{
 			HashMap<Integer, double[]> id2ValueMap = RainReader.outData;
 			waterBudget.inHMRain= id2ValueMap;
 			
-            CIReader.nextRecord();
+/*            CIReader.nextRecord();
             id2ValueMap = CIReader.outData;
-            waterBudget.initialConditionS_i = id2ValueMap;
+            waterBudget.initialConditionS_i = id2ValueMap;*/
             
             ETReader.nextRecord();
             id2ValueMap = ETReader.outData;

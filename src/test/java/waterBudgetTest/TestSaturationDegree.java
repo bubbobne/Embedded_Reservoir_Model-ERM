@@ -47,7 +47,7 @@ public class TestSaturationDegree{
 		PathGenerator path=new PathGenerator();
 
 		test.inSubbasins=sub;
-		test.Smax=1;
+		test.Smax_saturation_degree=1;
 
 		while( storageReader.doProcess) { 
 
@@ -63,7 +63,8 @@ public class TestSaturationDegree{
 
 			test.process();
 
-			path.pathToOutData="resources/Output/Storage/S.asc";
+			path.pathToOutDir="resources/Output/Storage";
+			path.basin="Bas";
 			path.tCurrent=storageReader.tCurrent;
 			path.process();
 
