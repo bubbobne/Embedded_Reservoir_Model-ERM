@@ -35,6 +35,9 @@ import oms3.annotations.Execute;
 import oms3.annotations.In;
 import oms3.annotations.Out;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
 
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.jgrasstools.gears.libs.modules.JGTModel;
@@ -42,27 +45,29 @@ import org.jgrasstools.gears.utils.RegionMap;
 import org.jgrasstools.gears.utils.coverage.CoverageUtilities;
 
 
-@Description("Calculate evapotraspiration based on the Priestley Taylor model")
+
+@Description("Calculate the saturation degree as the ratio between the Storage and the"
+		+ "Maximum Storage")
 @Author(name = "Marialaura Bancheri")
 
 
 public class SaturationDegree extends JGTModel {
 
 
-	@Description("")
+	@Description("The actual storage of the reservoir")
 	@In
 	public HashMap<Integer, double[]> inHMStorage;	
 
-	
+	@Description("The masimum storage of the reservoir")
 	@In
-	public double Smax;
+	public double Smax_saturation_degree;
 
-	@Description("The mean hourly air temperature. ")
+	@Description("The raster file with the subbasins")
 	@In
 	public GridCoverage2D inSubbasins;
 
 
-	@Description("The reference evapotranspiration.")
+	@Description("The raster file with the saturation degree")
 	@Out
 	public GridCoverage2D outSaturationDataGrid;
 
@@ -70,65 +75,86 @@ public class SaturationDegree extends JGTModel {
 	int step;
 	WritableRaster SubbasinsMap;
 
+	Logger logger = LogManager.getLogger(SaturationDegree.class);
+
+
 	@Execute
 	public void process() throws Exception {
-		checkNull(inSubbasins);
 
-		// transform the GrifCoverage2D maps into writable rasters
-		SubbasinsMap=mapsReader(inSubbasins);
+		try{
+			checkNull(inSubbasins);
 
-
-		// get the dimension of the maps
-		RegionMap regionMap = CoverageUtilities.getRegionParamsFromGridCoverage(inSubbasins);
-		int cols = regionMap.getCols();
-		int rows = regionMap.getRows();
+			// transform the GrifCoverage2D maps into writable rasters
+			SubbasinsMap=mapsReader(inSubbasins);
 
 
-		// create the output maps with the right dimensions
-		WritableRaster outWritableRaster= CoverageUtilities.createDoubleWritableRaster(cols, rows, null, null, null);
-		WritableRandomIter iter = RandomIterFactory.createWritable(outWritableRaster, null);
+			// get the dimension of the maps
+			RegionMap regionMap = CoverageUtilities.getRegionParamsFromGridCoverage(inSubbasins);
+			int cols = regionMap.getCols();
+			int rows = regionMap.getRows();
 
 
-		// reading the ID of all the stations 
-		Set<Entry<Integer, double[]>> entrySet = inHMStorage.entrySet();
+			// create the output maps with the right dimensions
+			WritableRaster outWritableRaster= CoverageUtilities.createDoubleWritableRaster(cols, rows, null, null, null);
+			WritableRandomIter iter = RandomIterFactory.createWritable(outWritableRaster, null);
 
 
-		// iterate over the station
-		for( Entry<Integer, double[]> entry : entrySet ) {
-			Integer ID = entry.getKey();
-
-			//System.out.println(ID);
-
-			/**Input data reading*/
-			double storage = inHMStorage.get(ID)[0];
-			if (isNovalue(storage)) storage= 0;
+			// reading the ID of all the stations 
+			Set<Entry<Integer, double[]>> entrySet = inHMStorage.entrySet();
 
 
-			// iterate over the entire domain and compute for each pixel the SWE
-			for( int r = 1; r < rows - 1; r++ ) {
-				for( int c = 1; c < cols - 1; c++ ) {
+			// iterate over the station
+			for( Entry<Integer, double[]> entry : entrySet ) {
+				Integer ID = entry.getKey();
+
+				//System.out.println(ID);
+
+				/**Input data reading*/
+				double storage = inHMStorage.get(ID)[0];
+				if (isNovalue(storage)) storage= 0;
+
+				// iterate over the entire domain and compute for each pixel the SWE
+				for( int r = 1; r < rows - 1; r++ ) {
+					for( int c = 1; c < cols - 1; c++ ) {
 
 
-					int IDsub=(int) SubbasinsMap.getSampleDouble(c, r, 0);
-
-					if(ID==IDsub){
-						iter.setSample(c, r, 0, storage/Smax);
-					}else{}
+						int IDsub=(int) SubbasinsMap.getSampleDouble(c, r, 0);
 
 
+						if(ID==IDsub){
+							iter.setSample(c, r, 0, storage/Smax_saturation_degree);
+						}else if(IDsub==-9999){
+							iter.setSample(c, r, 0, IDsub);
+						}else{}
+
+						//System.out.println("");
+					}
 				}
+
+
+
 			}
 
 
+			CoverageUtilities.setNovalueBorder(outWritableRaster);
+			outSaturationDataGrid = CoverageUtilities.buildCoverage("S", outWritableRaster, 
+					regionMap, inSubbasins.getCoordinateReferenceSystem());
+			step++;
 
+			String log4jConfPath = "lib/log4j.properties";
+			PropertyConfigurator.configure(log4jConfPath);
+			logger.info("Scrittura della mappa del grado di saturazione OK");
+
+
+		} catch (Exception e){
+			logger.error(e);
+			logger.info("Scrittura della mappa del grado di saturazione KO");
+			throw e;
 		}
 
-		CoverageUtilities.setNovalueBorder(outWritableRaster);
-		outSaturationDataGrid = CoverageUtilities.buildCoverage("S", outWritableRaster, 
-				regionMap, inSubbasins.getCoordinateReferenceSystem());
-		step++;
-
 	}
+
+
 
 
 	/**
@@ -140,7 +166,7 @@ public class SaturationDegree extends JGTModel {
 	 */
 	private WritableRaster mapsReader ( GridCoverage2D inValues){	
 		RenderedImage inValuesRenderedImage = inValues.getRenderedImage();
-		WritableRaster inValuesWR = CoverageUtilities.replaceNovalue(inValuesRenderedImage, -9999.0);
+		WritableRaster inValuesWR = CoverageUtilities.replaceNovalue(inValuesRenderedImage, -9999);
 		inValuesRenderedImage = null;
 		return inValuesWR;
 	}
