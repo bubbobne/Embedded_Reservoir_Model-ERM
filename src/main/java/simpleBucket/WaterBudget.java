@@ -50,12 +50,12 @@ public class WaterBudget{
 	@Description("Input recharge Hashmap")
 	@In
 	public HashMap<Integer, double[]> inHMRechargeValues;
-	
+
 	@Description("Input CI Hashmap")
 	@In
 	public HashMap<Integer, double[]>initialConditionS_i;
-	
-	
+
+
 	@Description("Time Step simulation")
 	@In
 	public int timeStep;
@@ -73,7 +73,7 @@ public class WaterBudget{
 	@Description("The area of the HRUs in km2")
 	@In
 	public double A;
-	
+
 	@Description("Smax")
 	@In
 	public double Smax_ro=10;
@@ -82,7 +82,7 @@ public class WaterBudget{
 	@Description("ODE solver model: dp853, Eulero ")
 	@In
 	public String solver_model;
-	
+
 	@Description("The output HashMap with the Water Storage")
 	@Out
 	public HashMap<Integer, double[]> outHMStorage= new HashMap<Integer, double[]>() ;
@@ -96,7 +96,7 @@ public class WaterBudget{
 	public HashMap<Integer, double[]> outHMDischarge_mm= new HashMap<Integer, double[]>() ;
 
 	int step;
-	
+
 	double CI;
 
 
@@ -120,10 +120,16 @@ public class WaterBudget{
 		// iterate over the station
 		for( Entry<Integer, double[]> entry : entrySet ) {
 			Integer ID = entry.getKey();
-			
+
 			if(step==0){
+				System.out.println("RO--a_ro:"+a_ro+"-b_rp:"+b_ro+"-Smax_ro:"+Smax_ro);
+
+				if(initialConditionS_i!=null){
 					CI=initialConditionS_i.get(ID)[0];
-					System.out.println("ro"+a_ro+"-"+b_ro+"-"+Smax_ro);
+					if (isNovalue(CI)) CI= Smax_ro/2;					
+				}else{
+					CI=Smax_ro/2;
+				}
 			}
 
 			/**Input data reading*/
@@ -134,7 +140,7 @@ public class WaterBudget{
 
 			double waterStorage=computeS(recharge,CI);
 			double discharge_mm=computeQ(waterStorage);
-			
+
 			double discharge=discharge_mm/1000*A*Math.pow(10, 6)/(60*timeStep);		
 
 			/** Save the result in  hashmaps for each station*/
@@ -175,7 +181,7 @@ public class WaterBudget{
 
 		/** Check of the Storage values: they cannot be negative*/
 		if (S_i<0) S_i=0;
-		
+
 		//if(S_i<1)System.out.println("ro"+a_ro+"-"+b_ro+"-"+Smax_ro);
 
 
