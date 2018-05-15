@@ -50,12 +50,12 @@ public class WaterBudgetGroundWater{
 	@Description("Input recharge Hashmap")
 	@In
 	public HashMap<Integer, double[]> inHMRechargeValues;
-	
+
 	@Description("Input CI Hashmap")
 	@In
 	public HashMap<Integer, double[]>initialConditionS_i;
-	
-	
+
+
 	@Description("Time Step simulation")
 	@In
 	public int timeStep;
@@ -73,7 +73,7 @@ public class WaterBudgetGroundWater{
 	@Description("The area of the HRUs in km2")
 	@In
 	public double A;
-	
+
 	@Description("Smax")
 	@In
 	public double Smax;
@@ -82,7 +82,7 @@ public class WaterBudgetGroundWater{
 	@Description("ODE solver model: dp853, Eulero ")
 	@In
 	public String solver_model;
-	
+
 	@Description("The output HashMap with the Water Storage")
 	@Out
 	public HashMap<Integer, double[]> outHMStorage= new HashMap<Integer, double[]>() ;
@@ -96,7 +96,7 @@ public class WaterBudgetGroundWater{
 	public HashMap<Integer, double[]> outHMDischarge_mm= new HashMap<Integer, double[]>() ;
 
 	int step;
-	
+
 	double CI;
 
 
@@ -115,23 +115,19 @@ public class WaterBudgetGroundWater{
 		Set<Entry<Integer, double[]>> entrySet = inHMRechargeValues.entrySet();
 
 
-		if(step==0){
-			for (Entry<Integer, double[]> entry : entrySet){
-				Integer ID = entry.getKey();
-				CI=initialConditionS_i.get(ID)[0];
-
-				//initialConditionS_i.put(ID,new double[]{5});
-				System.out.println("gw"+a+"-"+b+"-"+Smax);
-			}
-		}
-
 		// iterate over the station
 		for( Entry<Integer, double[]> entry : entrySet ) {
 			Integer ID = entry.getKey();
-			
+
 			if(step==0){
+				System.out.println("GW--a:"+a+"-b:"+b+"-Smax:"+Smax);
+
+				if(initialConditionS_i!=null){
 					CI=initialConditionS_i.get(ID)[0];
-					System.out.println("gw"+a+"-"+b+"-"+Smax);
+					if (isNovalue(CI)) CI= Smax/2000;
+				}else{
+					CI=Smax/2000;
+				}
 			}
 
 			/**Input data reading*/
@@ -142,7 +138,7 @@ public class WaterBudgetGroundWater{
 
 			double waterStorage=computeS(recharge,CI);
 			double discharge_mm=computeQ(waterStorage);
-			
+
 			double discharge=discharge_mm/1000*A*Math.pow(10, 6)/(60*timeStep);		
 
 			/** Save the result in  hashmaps for each station*/
@@ -182,7 +178,7 @@ public class WaterBudgetGroundWater{
 
 		/** Check of the Storage values: they cannot be negative*/
 		if (S_i<0) S_i=0;
-		
+
 		if(S_i<0.01)System.out.println("gw"+a+"-"+b+"-"+Smax);
 
 
