@@ -50,7 +50,7 @@ public class WaterBudgetRootZone{
 	@Description("Input rain Hashmap")
 	@In
 	public HashMap<Integer, double[]> inHMRain;	
-	
+
 	@Description("Input ET wet canopy Hashmap")
 	@In
 	public HashMap<Integer, double[]> inHMEwc;
@@ -70,16 +70,16 @@ public class WaterBudgetRootZone{
 	@Description("Maximum percolation rate")
 	@In
 	public double Pmax;
-	
+
 	@Description("Exponential of non-linear reservoir")
 	@In
 	public double b_rz;
-	
+
 	@Description("Degree of spatial variability of the soil moisture capacity")
 	@In
-  	public Double pB;
-	
-	
+	public Double pB;
+
+
 	@Description("partitioning coefficient between the root zone and the runoff reservoirs")
 	@Out
 	public double alpha;
@@ -88,28 +88,29 @@ public class WaterBudgetRootZone{
 	@Description("Maximum value of the water storage, needed for the"
 			+ "computation of the Actual EvapoTraspiration")
 	@In
+	@Out
 	public double s_RootZoneMax;
-	
+
 
 
 	@Description("ODE solver model: dp853, Eulero")
 	@In
 	public String solver_model;
-	
-	
+
+
 	@Description("The area of the HRUs in km2")
 	@In
 	public double A;
-	
+
 	@Description("Time step")
 	@In
 	public double inTimestep;
-	
-	
+
+
 	@Description("The HashMap with the Actual input of the layer ")
 	@Out
 	public HashMap<Integer, double[]> outHMActualInput= new HashMap<Integer, double[]>() ;
-	
+
 	@Description("The output HashMap with the Water Storage  ")
 	@Out
 	public HashMap<Integer, double[]> outHMStorage= new HashMap<Integer, double[]>() ;
@@ -123,23 +124,23 @@ public class WaterBudgetRootZone{
 	@Description("The output HashMap with the outflow which drains to the lower layer")
 	@Out
 	public HashMap<Integer, double[]> outHMR= new HashMap<Integer, double[]>() ;
-	
+
 	@Description("The output HashMap with the quick outflow ")
 	@Out
 	public HashMap<Integer, double[]> outHMquick= new HashMap<Integer, double[]>() ;
-	
+
 	@Description("The output HashMap with the quick outflow ")
 	@Out
 	public HashMap<Integer, double[]> outHMquick_mm= new HashMap<Integer, double[]>() ;
 
-	
+
 	int step;
 
 	double CI;
 
 
-    
-    
+
+
 
 	/**
 	 * Process: reading of the data, computation of the
@@ -150,8 +151,8 @@ public class WaterBudgetRootZone{
 	@Execute
 	public void process() throws Exception {
 		//checkNull(inHMRain);
-		
- 
+
+
 		// reading the ID of all the stations 
 		Set<Entry<Integer, double[]>> entrySet = inHMRain.entrySet();
 
@@ -161,65 +162,68 @@ public class WaterBudgetRootZone{
 		// iterate over the station
 		for( Entry<Integer, double[]> entry : entrySet ) {
 			Integer ID = entry.getKey();
-			
+
 			if(step==0){
-					CI=initialConditionS_i.get(ID)[0];					
-					//initialConditionS_i.put(ID,new double[]{s_RootZoneMax/2});
-					System.out.println("P:"+Pmax );
-					//System.out.println("input:"+actualInput );
-					System.out.println("b:"+b_rz );
-					System.out.println("pB:"+pB );
+				System.out.println("RZ--Pmax:"+Pmax+"-brz:"+b_rz+"-Smax:"+s_RootZoneMax+"-pB:"+pB);
+
+				if(initialConditionS_i!=null){
+					CI=initialConditionS_i.get(ID)[0];	
+					if (isNovalue(CI)) CI= s_RootZoneMax/2;	
+					
+				}else{
+					CI=s_RootZoneMax/2;
+				}
 			}
-			
+
 			//System.out.println(ID);
 
 			/**Input data reading*/
 			double rain = inHMRain.get(ID)[0];
 			if (isNovalue(rain)) rain= 0;
 			if(step==0&rain==0)rain= 1;
-			
-			//System.out.println("Qc:"+rain);
+
+
 
 			double alpha=(rain<0.001)?0:alpha(CI,rain,s_RootZoneMax);
-			
+
 			//System.out.println("alpha: "+ alpha);
 
-			
-			double actualInput=(1-alpha)*rain;
-			
-			double quick=alpha*rain/1000*A*Math.pow(10, 6)/(inTimestep*60);
-			
-			//System.out.println("RZmax:"+s_RootZoneMax );
-			
 
-			
-			
+			double actualInput=(1-alpha)*rain;
+
+			double quick=alpha*rain/1000*A*Math.pow(10, 6)/(inTimestep*60);
+
+			//System.out.println("RZmax:"+s_RootZoneMax );
+
+
+
+
 
 			double ETp=0;
 			if (inHMETp != null) ETp = inHMETp.get(ID)[0];
 			if (isNovalue(ETp)) ETp= 0;
-			
+
 			double Ewc=0;
 			if (inHMEwc != null) Ewc = inHMEwc.get(ID)[0];
 			if (isNovalue(Ewc)) Ewc= 0;
-			
+
 			double ETpNet=ETp-Ewc;
 
 			double waterStorage=computeS(actualInput,CI, ETpNet);
-			
+
 			double evapotranspiration=computeAET(waterStorage, ETpNet);
-						
+
 			double drainage=computeR(waterStorage);
-			
-			
+
+
 
 			/** Save the result in  hashmaps for each station*/
 			storeResult_series(ID,actualInput,waterStorage,evapotranspiration,drainage,quick,alpha*rain);
-			
+
 			//initialConditionS_i.put(ID,new double[]{waterStorage});
-			
+
 			CI=waterStorage;
-			
+
 
 		}
 
@@ -227,34 +231,35 @@ public class WaterBudgetRootZone{
 		step++;
 
 	}
-	
+
 	/**
 	 * Compute alpha according to the Hymod model
 	 *
 	 * @return the double value of alpha
 	 */
-	
-	private double alpha( double S_i, double Pval, double S_max) {
- 		double pCmax=S_max *(pB+1);
- 		double coeff1 = 1.0 - ((pB + 1.0) * (S_i) / pCmax);
- 		double exp = 1.0 / (pB + 1.0);
- 		double ct_prev = pCmax * (1.0 - Math.pow(coeff1, exp));
- 		double UT1 = Math.max((Pval - pCmax + ct_prev), 0.0);
-        //Pval = Pval - UT1;
-         double dummy = Math.min(((ct_prev + Pval- UT1) / pCmax), 1.0);
-        double coeff2 = (1.0 - dummy);
-        double exp2 = (pB + 1.0);
-        double xn = (pCmax / (pB + 1.0)) * (1.0 - (Math.pow(coeff2, exp2)));
-        double UT2 = Math.max(Pval- UT1 - (xn - S_i), 0);
-        alpha=(UT1+UT2)/Pval;
- 		return alpha=(UT1+UT2)/Pval;
- 		
- 		
- 		
- 	}
 
-	
-	
+	private double alpha( double S_i, double Pval, double S_max) {
+		double pCmax=S_max *(pB+1);
+		double coeff1 = 1.0 - ((pB + 1.0) * (S_i) / pCmax);
+		double exp = 1.0 / (pB + 1.0);
+		double ct_prev = pCmax * (1.0 - Math.pow(coeff1, exp));
+		double UT1 = Math.max((Pval - pCmax + ct_prev), 0.0);
+		//Pval = Pval - UT1;
+		double dummy = Math.min(((ct_prev + Pval- UT1) / pCmax), 1.0);
+		double coeff2 = (1.0 - dummy);
+		double exp2 = (pB + 1.0);
+		double xn = (pCmax / (pB + 1.0)) * (1.0 - (Math.pow(coeff2, exp2)));
+		double UT2 = Math.max(Pval- UT1 - (xn - S_i), 0);
+		alpha=(UT1+UT2)/Pval;
+		if (isNovalue(alpha)) alpha= 1;
+		return alpha;
+
+
+
+	}
+
+
+
 	/**
 	 * Compute the water storage
 	 *
@@ -282,8 +287,8 @@ public class WaterBudgetRootZone{
 
 
 		/** Check of the Storage values: they cannot be negative*/
-		//if (S_i<0) S_i=0;
-		
+		S_i=(S_i<0)?0:S_i;
+
 		//if(S_i<0.5)System.out.println("rootzone"+"-"+s_RootZoneMax+"-"+Pmax+"-"+b_rz);
 
 
@@ -295,7 +300,7 @@ public class WaterBudgetRootZone{
 	/**
 	 * Compute the outflow toward the lower layer
 	 *
-     * @param S_i: the actual storage value
+	 * @param S_i: the actual storage value
 	 * @return the double value of the outflow toward the lower layer
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
@@ -316,7 +321,7 @@ public class WaterBudgetRootZone{
 		double Emod=Math.max(0, (ETp*Math.min(1,1.33*S_i/s_RootZoneMax)));
 		return Emod;
 	}
-	
+
 
 
 
@@ -330,7 +335,7 @@ public class WaterBudgetRootZone{
 	 * @param drainage is drainage toward the lower layer
 	 * @throws SchemaException the schema exception
 	 */
-	
+
 	private void storeResult_series(int ID, double actualInput, double waterStorage,
 			double evapotranspiration,double drainage, double quick, double quick_mm) throws SchemaException {
 
@@ -342,6 +347,6 @@ public class WaterBudgetRootZone{
 		outHMquick_mm.put(ID, new double[]{quick_mm});
 
 	}
-	
+
 
 }
