@@ -58,7 +58,7 @@ public class WaterBudgetCanopyOUT{
 
 	@Description("ETp: Potential evaopotranspiration value for the given time considered")
 	double ETp;
-	
+
 	@Description("Input CI Hashmap")
 	@In
 	public HashMap<Integer, double[]>initialConditionS_i;
@@ -67,7 +67,7 @@ public class WaterBudgetCanopyOUT{
 	@Description("Leaf Area Index Hashmap")
 	@In
 	public  HashMap<Integer, double[]> inHMLAI;
-	
+
 	//double LAI=1;
 
 
@@ -80,11 +80,11 @@ public class WaterBudgetCanopyOUT{
 	@Description("Partitioning coefficient free throughfall")
 	@In
 	public double p;
-	
+
 	@Description("canopy drainage rate coefficient")
 	@In
 	public double K;
-	
+
 	@Description("canopy drainage rate exponent")
 	@In
 	public double g;
@@ -146,23 +146,28 @@ public class WaterBudgetCanopyOUT{
 			double rain = inHMRain.get(ID)[0];
 			if (isNovalue(rain)) rain= 0;
 			if(step==0&rain==0)rain= 1;
-			
+
 
 
 			double LAI= inHMLAI.get(ID)[0];
 			if (isNovalue(LAI))	LAI=0.6;		
-			//} else LAI=LAI_t;
-			
-			
-			if(step==0){				
-				CI=initialConditionS_i.get(ID)[0];
-				System.out.println("kc_in"+kc_canopy_out);
+			LAI=(LAI==0)?0.6:LAI;
+
+
+			if(step==0){
+				System.out.println("C--kc:"+kc_canopy_out);
+
+				if(initialConditionS_i!=null){
+					CI=initialConditionS_i.get(ID)[0];
+					if (isNovalue(CI)) CI= kc_canopy_out*LAI/2;
+				}else{
+					CI=kc_canopy_out*LAI/2;
+				}
 			}
 
 			ETp=0;
 			if (inHMETp != null) ETp = inHMETp.get(ID)[0];
 			if (isNovalue(ETp)) ETp= 0;
-			
 
 
 			double waterStorage=computeS((1-p)*rain,CI,LAI);
@@ -171,6 +176,8 @@ public class WaterBudgetCanopyOUT{
 			double throughfall=actualOutput+p*rain;			
 			double AET=computeAET(waterStorage,LAI);
 
+
+			
 			/** Save the result in  hashmaps for each station*/
 			storeResult_series(ID,waterStorage,throughfall, AET, actualInput,actualOutput);
 
@@ -193,17 +200,18 @@ public class WaterBudgetCanopyOUT{
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public double computeS(double rain, double S_i, double LAI) throws IOException {
-		
+
 		double s_CanopyMax=kc_canopy_out*LAI;
 		
+
 		/** Creation of the differential equation*/
 		FirstOrderDifferentialEquations ode=new waterBudgetODE(rain,s_CanopyMax, ETp, S_i);			
 
-	
+
 		/** Boundaries conditions*/
 		double[] y = new double[] {  S_i, s_CanopyMax };
-		
-		
+
+
 
 		/** Choice of the ODE solver */	
 		SolverODE solver;
@@ -211,7 +219,7 @@ public class WaterBudgetCanopyOUT{
 
 		/** result of the resolution of the ODE*/
 		S_i=(S_i<0.1&rain==0)?0:solver.integrateValues();
-		
+
 		S_i=(S_i<0)?0:S_i;
 		//if (S_i<0.1)System.out.println("canopy"+S_i);
 
