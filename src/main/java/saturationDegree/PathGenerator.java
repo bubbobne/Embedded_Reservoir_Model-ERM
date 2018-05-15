@@ -1,5 +1,6 @@
 package saturationDegree;
 
+import java.io.File;
 import java.io.IOException;
 
 import oms3.annotations.Description;
@@ -10,9 +11,13 @@ import oms3.annotations.Out;
 public class PathGenerator {
 	
 	
+	@Description("Name of the basin")
+	@In
+	public String basin;
+	
 	@Description("String path to the input data")
 	@In
-	public String pathToOutData;
+	public String pathToOutDir;
 
 	@Description("Start date of the input data")
 	@In
@@ -26,20 +31,22 @@ public class PathGenerator {
 	@Execute
 	public void process () throws IOException{
 		
-		String extension=pathToOutData.substring(pathToOutData.length()-4, pathToOutData.length());
-		
-		String path=pathToOutData.substring(0, pathToOutData.length()-4);
-		
+
+			
 		String year=tCurrent.substring(0,4);
 		String month=tCurrent.substring(5,7);
 		String day=tCurrent.substring(8,10);
 		
 		String hour=tCurrent.substring(11,13);		
 		String minutes=tCurrent.substring(14,16);
+
+		File dir = new File(pathToOutDir+"/"+year+month+day);
+		//System.out.println(path);
+		dir.mkdir();
 		
-		pathOutDataComplete=path+"_"+year+month+day+"_"+hour+minutes+extension;
+		pathOutDataComplete=pathToOutDir+"/"+year+month+day+"/Saturation_"+basin+"_"+year+month+day+"_"+hour+minutes+".asc";
 		
-		//System.out.println(pathOutDataComplete);
+		System.out.println(pathOutDataComplete);
 		
 	}
 	
