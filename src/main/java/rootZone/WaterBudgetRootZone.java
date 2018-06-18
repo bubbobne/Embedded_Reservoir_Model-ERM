@@ -90,6 +90,11 @@ public class WaterBudgetRootZone{
 	@In
 	@Out
 	public double s_RootZoneMax;
+	
+	@Description("CI of the water storage")
+	@In
+	@Out
+	public double s_RootZoneCI;
 
 
 
@@ -168,10 +173,10 @@ public class WaterBudgetRootZone{
 
 				if(initialConditionS_i!=null){
 					CI=initialConditionS_i.get(ID)[0];	
-					if (isNovalue(CI)) CI= s_RootZoneMax/2;	
+					if (isNovalue(CI)) CI= s_RootZoneMax*0.7;	
 					
 				}else{
-					CI=s_RootZoneMax/2;
+					CI=s_RootZoneMax*0.7;
 				}
 			}
 
