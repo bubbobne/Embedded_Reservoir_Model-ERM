@@ -78,7 +78,7 @@ public class Flow_2 implements Model{
 		double stage=H0;
 		try{
 			UnivariateSolver solver = new BrentSolver();
-			stage = solver.solve(100, f, H0, 20);
+			stage = solver.solve(100, f, -H0, 20);
 
 		} catch (Exception e) {
 			

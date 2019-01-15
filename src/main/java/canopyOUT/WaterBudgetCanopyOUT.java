@@ -145,7 +145,7 @@ public class WaterBudgetCanopyOUT{
 			/**Input data reading*/
 			double rain = inHMRain.get(ID)[0];
 			if (isNovalue(rain)) rain= 0;
-			if(step==0&rain==0)rain= 1;
+			//if(step==0&rain==0)rain= 1;
 
 
 

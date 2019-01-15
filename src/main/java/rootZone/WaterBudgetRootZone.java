@@ -95,6 +95,10 @@ public class WaterBudgetRootZone{
 	@In
 	@Out
 	public double s_RootZoneCI;
+	
+	@Description("Initial saturation_degree")
+	@In
+	public Double sat_degree=0.6;
 
 
 
@@ -173,10 +177,10 @@ public class WaterBudgetRootZone{
 
 				if(initialConditionS_i!=null){
 					CI=initialConditionS_i.get(ID)[0];	
-					if (isNovalue(CI)) CI= s_RootZoneMax*0.7;	
+					if (isNovalue(CI)) CI= s_RootZoneMax*sat_degree;	
 					
 				}else{
-					CI=s_RootZoneMax*0.7;
+					CI=s_RootZoneMax*sat_degree;
 				}
 			}
 
@@ -185,7 +189,7 @@ public class WaterBudgetRootZone{
 			/**Input data reading*/
 			double rain = inHMRain.get(ID)[0];
 			if (isNovalue(rain)) rain= 0;
-			if(step==0&rain==0)rain= 1;
+			//if(step==0&rain==0)rain= 1;
 
 
 

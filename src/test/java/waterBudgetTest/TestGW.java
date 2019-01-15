@@ -16,20 +16,20 @@ public class TestGW{
 	@Test
 	public void testLinear() throws Exception {
 
-		String startDate = "1994-01-01 00:00";
-		String endDate = "1998-10-05 00:00";
-		int timeStepMinutes = 60*24;
+		String startDate = "1994-01-01 21:00";
+		String endDate = "1994-01-01 22:00";
+		int timeStepMinutes = 60;
 		String fId = "ID";
 
 		String inPathToPrec = "resources/Input/rainfall.csv";
-		String inPathToCI ="resources/Input/S_gw.csv";
+		//String inPathToCI ="resources/Input/S_gw.csv";
 
 		String pathToS= "resources/Output/gw/S_gw.csv";
 		String pathToR= "resources/Output/gw/Q_gw.csv";
 
 		
 		OmsTimeSeriesIteratorReader JReader = getTimeseriesReader(inPathToPrec, fId, startDate, endDate, timeStepMinutes);
-		OmsTimeSeriesIteratorReader CIReader = getTimeseriesReader(inPathToCI, fId, startDate, startDate, timeStepMinutes);
+		//OmsTimeSeriesIteratorReader CIReader = getTimeseriesReader(inPathToCI, fId, startDate, startDate, timeStepMinutes);
 
 		OmsTimeSeriesIteratorWriter writerS = new OmsTimeSeriesIteratorWriter();
 
@@ -69,9 +69,10 @@ public class TestGW{
 			HashMap<Integer, double[]> id2ValueMap = JReader.outData;
 			waterBudget.inHMRechargeValues = id2ValueMap;
 			
-            CIReader.nextRecord();
+            /**
+			CIReader.nextRecord();
             id2ValueMap = CIReader.outData;
-            waterBudget.initialConditionS_i = id2ValueMap;
+            waterBudget.initialConditionS_i = id2ValueMap;*/
 			
 
 
@@ -109,7 +110,7 @@ public class TestGW{
 		reader.file = inPath;
 		reader.idfield = "ID";
 		reader.tStart = startDate;
-		reader.tTimestep = 60*24;
+		reader.tTimestep = timeStepMinutes;
 		reader.tEnd = endDate;
 		reader.fileNovalue = "-9999";
 		reader.initProcess();

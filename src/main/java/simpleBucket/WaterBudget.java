@@ -114,7 +114,7 @@ public class WaterBudget{
 		// reading the ID of all the stations 
 		Set<Entry<Integer, double[]>> entrySet = inHMRechargeValues.entrySet();
 
-
+		double tau_ro=(a_ro*Math.pow(A, 0.5));
 
 
 		// iterate over the station
@@ -126,20 +126,20 @@ public class WaterBudget{
 
 				if(initialConditionS_i!=null){
 					CI=initialConditionS_i.get(ID)[0];
-					if (isNovalue(CI)) CI= Smax_ro/2;					
+					if (isNovalue(CI)) CI= 0;					
 				}else{
-					CI=Smax_ro/2;
+					CI=0;
 				}
 			}
 
 			/**Input data reading*/
 			double recharge = inHMRechargeValues.get(ID)[0];
 			if (isNovalue(recharge)) recharge= 0;
-			if(step==0&recharge==0)recharge= 1;
+			//if(step==0&recharge==0)recharge= 1;
 
 
-			double waterStorage=computeS(recharge,CI);
-			double discharge_mm=computeQ(waterStorage);
+			double waterStorage=computeS(recharge,CI,tau_ro);
+			double discharge_mm=computeQ(waterStorage,tau_ro);
 
 			double discharge=discharge_mm/1000*A*Math.pow(10, 6)/(60*timeStep);		
 
@@ -163,11 +163,11 @@ public class WaterBudget{
 	 * @return the water storage, according to the model and the layer
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public double computeS(double recharge, double S_i) throws IOException {
+	public double computeS(double recharge, double S_i, double tau_ro) throws IOException {
 
 
 		/** Creation of the differential equation*/
-		FirstOrderDifferentialEquations ode=new waterBudgetODE(recharge,a_ro,b_ro,Smax_ro);			
+		FirstOrderDifferentialEquations ode=new waterBudgetODE(recharge,1/tau_ro,b_ro,Smax_ro);			
 
 		/** Boundaries conditions*/
 		double[] y = new double[] { S_i, Smax_ro };
@@ -195,8 +195,8 @@ public class WaterBudget{
 	 * @return the double value of the simulated discharge
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public double computeQ(double S_i) throws IOException {
-		double Q=a_ro*Math.pow(S_i/Smax_ro,b_ro);
+	public double computeQ(double S_i, double tau_ro) throws IOException {
+		double Q=1/tau_ro*Math.pow(S_i/Smax_ro,b_ro);
 		return Q;
 	}
 

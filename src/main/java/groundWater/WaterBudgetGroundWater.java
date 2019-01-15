@@ -124,16 +124,16 @@ public class WaterBudgetGroundWater{
 
 				if(initialConditionS_i!=null){
 					CI=initialConditionS_i.get(ID)[0];
-					if (isNovalue(CI)) CI= Smax*0.7;
+					if (isNovalue(CI)) CI= Smax*0.5;
 				}else{
-					CI=Smax*0.7;
+					CI=Smax*0.5;
 				}
 			}
 
 			/**Input data reading*/
 			double recharge = inHMRechargeValues.get(ID)[0];
 			if (isNovalue(recharge)) recharge= 0;
-			if(step==0&recharge==0)recharge= 1;
+//			if(step==0&recharge==0)recharge= 1;
 
 
 			double waterStorage=computeS(recharge,CI);
@@ -179,7 +179,7 @@ public class WaterBudgetGroundWater{
 		/** Check of the Storage values: they cannot be negative*/
 		if (S_i<0) S_i=0;
 
-		if(S_i<0.01)System.out.println("gw"+a+"-"+b+"-"+Smax);
+		//if(S_i<0.01)System.out.println("gw"+a+"-"+b+"-"+Smax);
 
 
 		return S_i;
