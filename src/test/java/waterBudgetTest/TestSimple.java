@@ -16,12 +16,12 @@ public class TestSimple{
 	@Test
 	public void testLinear() throws Exception {
 
-		String startDate = "1994-01-01 00:00";
-		String endDate = "1998-10-05 00:00";
+		String startDate = "2018-12-20 11:00";
+		String endDate = "2018-12-20 20:00";
 		int timeStepMinutes = 60;
 		String fId = "ID";
 
-		String inPathToPrec = "resources/Input/rainfall.csv";
+		String inPathToPrec = "/Users/marialaura/Desktop/InputRO_11_Basento.csv";
 		//String inPathToCI ="resources/Input/S_gw.csv";
 
 		String pathToS= "resources/Output/gw/S_gw.csv";
@@ -56,10 +56,10 @@ public class TestSimple{
 		while( JReader.doProcess ) {
 		
 			waterBudget.solver_model="dp853";
-			waterBudget.a_ro=350;
-			waterBudget.b_ro=4.6;
+			waterBudget.a_ro=0.49;
+			waterBudget.b_ro=1;
 			waterBudget.timeStep=60;
-			waterBudget.A=5.2092;
+			waterBudget.A=91.41;
 			waterBudget.Smax_ro=1;
 			
 
@@ -109,7 +109,7 @@ public class TestSimple{
 		reader.file = inPath;
 		reader.idfield = "ID";
 		reader.tStart = startDate;
-		reader.tTimestep = 60*24;
+		reader.tTimestep = timeStepMinutes;
 		reader.tEnd = endDate;
 		reader.fileNovalue = "-9999";
 		reader.initProcess();
