@@ -16,12 +16,12 @@ public class TestSimple{
 	@Test
 	public void testLinear() throws Exception {
 
-		String startDate = "2018-12-20 11:00";
-		String endDate = "2018-12-20 20:00";
+		String startDate = "1997-01-01 11:00";
+		String endDate = "1997-01-01 12:00";
 		int timeStepMinutes = 60;
 		String fId = "ID";
 
-		String inPathToPrec = "/Users/marialaura/Desktop/InputRO_11_Basento.csv";
+		String inPathToPrec = "resources/Input/InputRO_1.csv";
 		//String inPathToCI ="resources/Input/S_gw.csv";
 
 		String pathToS= "resources/Output/gw/S_gw.csv";
@@ -61,6 +61,8 @@ public class TestSimple{
 			waterBudget.timeStep=60;
 			waterBudget.A=91.41;
 			waterBudget.Smax_ro=1;
+			waterBudget.model="ERM";
+			
 			
 
 			

@@ -168,7 +168,7 @@ public class WaterBudgetDam{
 				}else{
 					CI=h_CI;
 				}
-				System.out.println("Initial water level DAM "+CI);
+				//System.out.println("Initial water level DAM "+CI);
 			}
 
 

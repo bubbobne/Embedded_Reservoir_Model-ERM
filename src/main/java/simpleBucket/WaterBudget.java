@@ -59,6 +59,10 @@ public class WaterBudget{
 	@Description("Time Step simulation")
 	@In
 	public int timeStep;
+	
+	@Description("ERM or sERM")
+	@In
+	public String model;
 
 
 	@Description("Coefficient of the non-linear Reservoir model ")
@@ -114,8 +118,13 @@ public class WaterBudget{
 		// reading the ID of all the stations 
 		Set<Entry<Integer, double[]>> entrySet = inHMRechargeValues.entrySet();
 
-		double tau_ro=(a_ro*Math.pow(A, 0.5));
 
+
+		double tau_ro=(a_ro*Math.pow(A, 0.5));
+		
+		if(model=="ERM"){
+			tau_ro=1/a_ro;
+		}
 
 		// iterate over the station
 		for( Entry<Integer, double[]> entry : entrySet ) {

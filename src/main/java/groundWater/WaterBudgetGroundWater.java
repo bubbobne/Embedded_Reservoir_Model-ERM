@@ -124,9 +124,9 @@ public class WaterBudgetGroundWater{
 
 				if(initialConditionS_i!=null){
 					CI=initialConditionS_i.get(ID)[0];
-					if (isNovalue(CI)) CI= Smax*0.5;
+					if (isNovalue(CI)) CI= 0.5*Smax;
 				}else{
-					CI=Smax*0.5;
+					CI=0.5*Smax;
 				}
 			}
 
