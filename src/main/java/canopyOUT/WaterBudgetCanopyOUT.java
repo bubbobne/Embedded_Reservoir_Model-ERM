@@ -73,7 +73,7 @@ public class WaterBudgetCanopyOUT{
 
 	@Description("coefficient canopy out")
 	@In
-	public double kc_canopy_out ;
+	public double kc ;
 
 
 
@@ -155,13 +155,13 @@ public class WaterBudgetCanopyOUT{
 
 
 			if(step==0){
-				System.out.println("C--kc:"+kc_canopy_out);
+				System.out.println("C--kc:"+kc);
 
 				if(initialConditionS_i!=null){
 					CI=initialConditionS_i.get(ID)[0];
-					if (isNovalue(CI)) CI= kc_canopy_out*LAI/2;
+					if (isNovalue(CI)) CI= kc*LAI/2;
 				}else{
-					CI=kc_canopy_out*LAI/2;
+					CI=kc*LAI/2;
 				}
 			}
 
@@ -201,7 +201,7 @@ public class WaterBudgetCanopyOUT{
 	 */
 	public double computeS(double rain, double S_i, double LAI) throws IOException {
 
-		double s_CanopyMax=kc_canopy_out*LAI;
+		double s_CanopyMax=kc*LAI;
 		
 
 		/** Creation of the differential equation*/
@@ -237,7 +237,7 @@ public class WaterBudgetCanopyOUT{
 
 	public double computeAET(double S_i, double LAI) throws IOException {
 		//(Brisson et al., 1998):
-		double s_CanopyMax=kc_canopy_out*LAI;
+		double s_CanopyMax=kc*LAI;
 
 
 		double AET=Math.max(0, (ETp*Math.min(1,(S_i)/s_CanopyMax)));	
@@ -254,7 +254,7 @@ public class WaterBudgetCanopyOUT{
 
 	public double computeThroughfall(double rain,double S_i, double LAI) throws IOException {
 		//(Brisson et al., 1998):
-		double s_CanopyMax=kc_canopy_out*LAI;
+		double s_CanopyMax=kc*LAI;
 
 		double throughfall=Math.max(0, S_i-s_CanopyMax);
 

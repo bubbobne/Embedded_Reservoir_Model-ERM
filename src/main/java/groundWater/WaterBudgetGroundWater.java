@@ -63,20 +63,20 @@ public class WaterBudgetGroundWater{
 
 	@Description("Coefficient of the non-linear Reservoir model ")
 	@In
-	public double a ;
+	public double e ;
 
 
 	@Description("Exponent of non-linear reservoir")
 	@In
-	public double b;
+	public double f;
 
 	@Description("The area of the HRUs in km2")
 	@In
 	public double A;
 
-	@Description("Smax")
+	@Description("s_GroundWaterMax")
 	@In
-	public double Smax;
+	public double s_GroundWaterMax;
 
 
 	@Description("ODE solver model: dp853, Eulero ")
@@ -120,13 +120,13 @@ public class WaterBudgetGroundWater{
 			Integer ID = entry.getKey();
 
 			if(step==0){
-				System.out.println("GW--a:"+a+"-b:"+b+"-Smax:"+Smax);
+				System.out.println("GW--e:"+e+"-f:"+f+"-s_GroundWaterMax:"+s_GroundWaterMax);
 
 				if(initialConditionS_i!=null){
 					CI=initialConditionS_i.get(ID)[0];
-					if (isNovalue(CI)) CI= 0.5*Smax;
+					if (isNovalue(CI)) CI= 0.5*s_GroundWaterMax;
 				}else{
-					CI=0.5*Smax;
+					CI=0.5*s_GroundWaterMax;
 				}
 			}
 
@@ -164,10 +164,10 @@ public class WaterBudgetGroundWater{
 
 
 		/** Creation of the differential equation*/
-		FirstOrderDifferentialEquations ode=new waterBudgetODE(recharge,a,b, Smax);			
+		FirstOrderDifferentialEquations ode=new waterBudgetODE(recharge,e,f, s_GroundWaterMax);			
 
 		/** Boundaries conditions*/
-		double[] y = new double[] { S_i, Smax };
+		double[] y = new double[] { S_i, s_GroundWaterMax };
 
 		/** Choice of the ODE solver */	
 		SolverODE solver;
@@ -179,7 +179,7 @@ public class WaterBudgetGroundWater{
 		/** Check of the Storage values: they cannot be negative*/
 		if (S_i<0) S_i=0;
 
-		//if(S_i<0.01)System.out.println("gw"+a+"-"+b+"-"+Smax);
+		//if(S_i<0.01)System.out.println("gw"+a+"-"+b+"-"+s_GroundWaterMax);
 
 
 		return S_i;
@@ -193,7 +193,7 @@ public class WaterBudgetGroundWater{
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public double computeQ(double S_i) throws IOException {
-		double Q=a*Math.pow(S_i/Smax, b);
+		double Q=e*Math.pow(S_i/s_GroundWaterMax, f);
 		return Q;
 	}
 
