@@ -56,11 +56,11 @@ public class TestGW{
 		while( JReader.doProcess ) {
 		
 			waterBudget.solver_model="dp853";
-			waterBudget.a=350;
-			waterBudget.b=4.6;
+			waterBudget.e=350;
+			waterBudget.f=4.6;
 			waterBudget.timeStep=60;
 			waterBudget.A=5.2092;
-			waterBudget.Smax=700;
+			waterBudget.s_GroundWaterMax=700;
 			
 
 			

@@ -56,11 +56,11 @@ public class TestSimple{
 		while( JReader.doProcess ) {
 		
 			waterBudget.solver_model="dp853";
-			waterBudget.a_ro=0.49;
-			waterBudget.b_ro=1;
+			waterBudget.c=0.49;
+			waterBudget.d=1;
 			waterBudget.timeStep=60;
 			waterBudget.A=91.41;
-			waterBudget.Smax_ro=1;
+			waterBudget.s_RunoffMax=1;
 			waterBudget.model="ERM";
 			
 			

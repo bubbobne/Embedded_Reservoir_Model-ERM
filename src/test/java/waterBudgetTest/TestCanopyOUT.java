@@ -71,7 +71,7 @@ public class TestCanopyOUT{
 
 		    waterBudget.p=0.65;	
 			waterBudget.solver_model="dp853";
-			waterBudget.kc_canopy_out= 0.25;
+			waterBudget.kc= 0.25;
 
 
 

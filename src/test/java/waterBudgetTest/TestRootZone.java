@@ -68,9 +68,9 @@ public class TestRootZone{
 
 			
 			waterBudget.s_RootZoneMax=4;
-			waterBudget.Pmax=0.000958;
-			waterBudget.b_rz=1.83;
-			waterBudget.pB=0.33;
+			waterBudget.a=0.000958;
+			waterBudget.b=1.83;
+			waterBudget.pB_soil=0.33;
 			waterBudget.inTimestep=60;
 			waterBudget.A=3.79;
 			
