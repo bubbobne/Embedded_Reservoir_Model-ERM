@@ -1,0 +1,18 @@
+ # Eclipse
+.classpath
+.editorconfig
+.factorypath
+.gitattributes
+.project
+.settings/
+bin/
+
+
+
+# Mac
+.DS_Store
+
+
+# maven project related ignore files and directories
+.mvn/
+target/
