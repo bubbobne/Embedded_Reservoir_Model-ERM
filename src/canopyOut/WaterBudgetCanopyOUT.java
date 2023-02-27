@@ -1,4 +1,4 @@
-package canopyOut2;
+package canopyOut;
 
 import static org.hortonmachine.gears.libs.modules.HMConstants.isNovalue;
 
@@ -10,6 +10,7 @@ import oms3.annotations.Description;
 import oms3.annotations.Execute;
 import oms3.annotations.In;
 import oms3.annotations.Out;
+import static utility.Utils.getRKMean;;
 
 /**
  * The component solves the budget for the outer part of the canopy layer.
@@ -114,7 +115,7 @@ public class WaterBudgetCanopyOUT {
 			LAI = (LAI == 0) ? 0.6 : LAI;
 
 			ETp = inHMETp.get(ID)[0];
-			if (isNovalue(ETp))
+			if (isNovalue(ETp) || ETp < 0)
 				ETp = 0.0;
 
 			if (step == 0) {
@@ -145,7 +146,6 @@ public class WaterBudgetCanopyOUT {
 			double throughfall = actualOutput + p * rain;
 			double AET = out[2];
 			// export to timeseries
-			System.out.println(CI - waterStorage + rain - throughfall - AET);
 			storeResult_series(ID, waterStorage, throughfall, AET, actualInput, actualOutput, error);
 
 			// set new IC
@@ -156,50 +156,41 @@ public class WaterBudgetCanopyOUT {
 	}
 
 	// compute dS/dt
-	public double computeFunction(double Sn, double in) {
-		double actualOut = computeActualOutput(Sn);
-		return in - computeAET(Sn, in, actualOut) - actualOut;
+	public double[] computeFunction(double Sn, double in) {
+		if (Sn < 0) {
+			Sn = 0;
+		}
+		double et = computeAET(Sn, in);
+		double actualOut = computeActualOutput(Sn, in, et);
+		return new double[] { in - et - actualOut, et, actualOut };
 	}
 
 	// compute AET
-	public double computeAET(double Sn, double in, double out) {
-		return Math.min(Sn + in - out, ETp * Math.min(1, Sn / s_CanopyMax));
+	public double computeAET(double Sn, double in) {
+		return Math.min(Math.max(0, Sn + in), ETp * Math.min(1, Sn / s_CanopyMax));
 	}
 
 	// compute actual output
-	public double computeActualOutput(double Sn) {
-		return Math.max(0, Sn - s_CanopyMax);
+	public double computeActualOutput(double Sn, double in, double et) {
+		return Math.max(0, Sn + in - et - s_CanopyMax);
 	}
 
 	// RK4
 	public double[] RK4(double Sn, double in) {
-		double k1 = 0;
-		double k2 = 0;
-		double k3 = 0;
-		double k4 = 0;
+
 		double balance = 0;
-		double min = 60;
-		double aet = 0;
-		double actualOut = 0;
-		double dt = 1.0 / RKiter;
-		for (int k = 0; k < RKiter; k++) {
 
-			k1 = computeFunction(Sn, in);
-			k2 = computeFunction(Sn + 0.5 * dt * k1, in);
-			k3 = computeFunction(Sn + 0.5 * dt * k2, in);
-			k4 = computeFunction(Sn + dt * k3, in);
-			double Sn1 = Sn + dt * (k1 + 2 * k2 + 2 * k3 + k4) / 6;
-			double deltaActualOut = computeActualOutput(Sn);
-			double deltaAET = dt * computeAET(Sn, in, deltaActualOut);
-			aet = aet + deltaAET;
-			deltaActualOut = dt * deltaActualOut;
-			actualOut = actualOut + deltaActualOut;
-			balance = balance + Sn - Sn1 + dt * in - deltaAET - deltaActualOut;
-			Sn = Sn1;
-		}
+		double[] k1 = computeFunction(Sn, in);
+		double[] k2 = computeFunction(Sn + 0.5 * k1[0], in);
+		double[] k3 = computeFunction(Sn + 0.5 * k2[0], in);
+		double[] k4 = computeFunction(Sn + k3[0], in);
+		double Sn1 = Sn + getRKMean(k1, k2, k3, k4, 0);
+		double aet = getRKMean(k1, k2, k3, k4, 1);
+		double actualOut = getRKMean(k1, k2, k3, k4, 2);
+		;
+		balance = balance + Sn - Sn1 + in - aet - actualOut;
 
-
-		return new double[] { Sn, balance, aet, actualOut };
+		return new double[] { Sn1, balance, aet, actualOut };
 	}
 
 	// store results

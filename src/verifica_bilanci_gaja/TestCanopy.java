@@ -7,7 +7,7 @@ import org.hortonmachine.gears.io.timedependent.OmsTimeSeriesIteratorReader;
 import org.hortonmachine.gears.io.timedependent.OmsTimeSeriesIteratorWriter;
 import org.junit.Test;
 
-import canopyOut2.WaterBudgetCanopyOUT;
+import canopyOut.WaterBudgetCanopyOUT;
 
 //0.07278611961063386
 
@@ -17,12 +17,12 @@ public class TestCanopy {
 	public void testLinear() throws Exception {
 
 		String startDate = "2015-10-01 00:00";
-		String endDate = "2018-09-30 00:00";
+		String endDate = "2016-09-30 00:00";
 		int timeStepMinutes = 1440;
 		String fId = "ID";
 
 		String inPathToPrec = "/home/andreisd/Downloads/wetransfer_c_aet_853-csv_2023-02-17_1512/Md_853.csv";
-		String inPathToET = "/home/andreisd/Downloads/wetransfer_c_aet_853-csv_2023-02-17_1512/C_AET_853.csv";
+		String inPathToET = "/home/andreisd/Downloads/853/ET_PT_853.csv";
 
 		String pathToS = "/home/andreisd/Downloads/wetransfer_c_aet_853-csv_2023-02-17_1512/storage.csv";
 		String pathToET = "/home/andreisd/Downloads/wetransfer_c_aet_853-csv_2023-02-17_1512/AET.csv";
@@ -73,6 +73,7 @@ public class TestCanopy {
 
 			ETReader.nextRecord();
 			id2ValueMap = ETReader.outData;
+			double inEt =  ETReader.outData.get(ID)[0];
 			waterBudget.inHMETp = id2ValueMap;
 
 			id2ValueMap = new HashMap<Integer, double[]>();
@@ -94,16 +95,22 @@ public class TestCanopy {
 				balance = balance + Math.abs(tmpBalance);
 		//		if (Math.abs(tmpBalance) > 0.001) {
 
-					System.out.println(waterBudget.outHMError.get(ID)[0]);
+//				/	System.out.println(waterBudget.outHMError.get(ID)[0]);
 //
-//					System.out.println(sto);
+//				System.out.println(sto);
+
+				System.out.println(outHMET.get(ID)[0]);
+				double t2 = 0.2754773505506556*0.6/2;
+//				System.out.println(inEt * (sto/t2));
+
+				
 //					System.out.println(s);
 //					System.out.println(inRain);
 //					System.out.println(outHThroughfall.get(ID)[0]);
 //					System.out.println(outHMET.get(ID)[0]);
 //
 //					System.out.println(balance);
-					System.out.println(tmpBalance);
+				//	System.out.println(tmpBalance);
 
 					System.out.println("********************");
 	//			}
@@ -141,7 +148,7 @@ public class TestCanopy {
 
 			t = t + 1;
 		}
-		System.out.println(balance);
+	//	System.out.println(balance);
 
 		ETReader.close();
 		RainReader.close();

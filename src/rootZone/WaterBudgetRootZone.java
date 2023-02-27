@@ -17,7 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package rootZone2;
+package rootZone;
 
 import static org.hortonmachine.gears.libs.modules.HMConstants.isNovalue;
 
@@ -29,7 +29,7 @@ import oms3.annotations.Description;
 import oms3.annotations.Execute;
 import oms3.annotations.In;
 import oms3.annotations.Out;
-
+import static utility.Utils.getRKMean;;
 /**
  * The Class WaterBudget solves the water budget equation for the root zone
  * layer.
@@ -218,10 +218,19 @@ public class WaterBudgetRootZone {
 	}
 
 	// compute dS/dt
-	public double computeFunction(double Sn, double etpnet) {
-		double fun = actualInputs(Sn, alpha(Sn, rain))[0]
-				- computeAET(Sn, actualInputs(Sn, alpha(Sn, rain))[0], computeR(Sn), etpnet) - computeR(Sn);
-		return fun;
+	public double[] computeFunction(double Sn, double etpnet) {
+		if (Sn < 0) {
+			Sn = 0;
+		}
+		double alpha = alpha(Sn, rain);
+		double[] o = actualInputs(Sn, alpha);
+		double actualInputs = o[0];
+		double quick = o[1];
+
+		double aet = computeAET(Sn, actualInputs, etpnet);
+		double recharge = computeR(Sn, actualInputs, aet);
+		double fun = actualInputs - aet - recharge;
+		return new double[] { fun, actualInputs, recharge, aet, alpha, quick };
 	}
 
 	// compute alpha according to Hymod
@@ -250,57 +259,42 @@ public class WaterBudgetRootZone {
 	}
 
 	// compute groundwater recharge
-	public double computeR(double Sn) {
-		return g * Math.pow(Sn / s_RootZoneMax, h);
+	public double computeR(double Sn, double in, double et) {
+		double out = g * Math.pow(Math.min(1, Sn / s_RootZoneMax), h);
+		out = Math.min(Sn + in - et, out + Math.max(0, Sn - s_RootZoneMax + in - et - out));
+		return out;
+
 	}
 
 	// compute AET
-	public double computeAET(double Sn, double in, double out, double etpnet) {
-		return Math.min(Sn + in - out, etpnet * Math.min(1, 1.33 * Sn / s_RootZoneMax));
+	public double computeAET(double Sn, double in, double etpnet) {
+		return Math.min(Sn + in, etpnet * Math.min(1, 1.33 * Math.min(1, Sn / s_RootZoneMax)));
 	}
 
 	// RK4
 	public double[] RK4(double Sn, double etpnet) {
-		double k1 = 0;
-		double k2 = 0;
-		double k3 = 0;
-		double k4 = 0;
+
 		double balance = 0;
-		double min = 60;
-		double alpha = 0;
-		double actualIn = 0;
-		double recharge = 0;
-		double aet = 0;
-		double dt = 1.0 / RKiter;
-		double quick = 0;
-		for (int k = 0; k < RKiter; k++) {
-			k1 = computeFunction(Sn, etpnet);
-			k2 = computeFunction(Sn + 0.5 * dt * k1, etpnet);
-			k3 = computeFunction(Sn + 0.5 * dt * k2, etpnet);
-			k4 = computeFunction(Sn + dt * k3, etpnet);
-			double Sn1 = Sn + dt * (k1 + 2 * k2 + 2 * k3 + k4) / 6;
-			double tmpAlpha = alpha(Sn, rain);
-			double[] tmp = actualInputs(Sn, tmpAlpha);
-			double tmpInput = dt *tmp [0];
-			double tmpQuick = dt * tmp[1];
-			double tmpRecharge = dt * computeR(Sn);
-			double tmpAet = dt * computeAET(Sn, tmpInput, tmpRecharge, etpnet);
-			balance = balance + Sn - Sn1 + tmpInput - tmpAet - tmpRecharge;
-			Sn = Sn1;
-			alpha = alpha + tmpAlpha;
-			actualIn = actualIn + tmpInput;
-			recharge = recharge + tmpRecharge;
-			quick = quick+tmpQuick;
-			aet = aet + tmpAet;
-		}
-		alpha = alpha / RKiter;
-		return new double[] { Sn, balance, alpha,quick, actualIn, recharge, aet };
+		double[] k1 = computeFunction(Sn, etpnet);
+		double[] k2 = computeFunction(Sn + 0.5 * k1[0], etpnet);
+		double[] k3 = computeFunction(Sn + 0.5 * k2[0], etpnet);
+		double[] k4 = computeFunction(Sn + k3[0], etpnet);
+		double Sn1 = Sn + getRKMean(k1, k2, k3, k4, 0);
+		double alpha = getRKMean(k1, k2, k3, k4, 4);
+		double actualInput = getRKMean(k1, k2, k3, k4, 1);
+		double quick = getRKMean(k1, k2, k3, k4, 5);
+		double aet = getRKMean(k1, k2, k3, k4, 3);
+		double recharge = getRKMean(k1, k2, k3, k4, 2);
+		balance = balance + Sn - Sn1 + actualInput - aet - recharge;
+		Sn = Sn1;
+		return new double[] { Sn, balance, alpha, quick, actualInput, recharge, aet };
 	}
+
+
 
 	// store results
 	private void storeResult_series(int ID, double S, double in, double aet, double re, double quick_mm, double quick,
 			double alf, double err) {
-
 		outHMActualInput.put(ID, new double[] { in });
 		outHMStorage.put(ID, new double[] { S });
 		outHMEvaporation.put(ID, new double[] { aet });

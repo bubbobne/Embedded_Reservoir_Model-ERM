@@ -7,7 +7,6 @@ import org.hortonmachine.gears.io.timedependent.OmsTimeSeriesIteratorReader;
 import org.hortonmachine.gears.io.timedependent.OmsTimeSeriesIteratorWriter;
 import org.junit.Test;
 
-import runoff.WaterBudgetRunoff;
 import simpleBucket.WaterBudget;
 
 //0.07278611961063386
@@ -22,7 +21,7 @@ public class TestRunoff {
 		int timeStepMinutes = 60;
 		String fId = "ID";
 
-		String inPathToRec = "/home/andreisd/Downloads/wetransfer_c_aet_853-csv_2023-02-17_1512/RZ_quick_mm_853.csv";
+		String inPathToRec = "/home/andreisd/Downloads/OMS_Project_Brenta_GWS2023_gaja/OMS_Project_Brenta_GWS2023/GEOframe VdA/output_daniele/RZ_quick_mm_853.csv";
 
 		String pathToDischargeMM = "/home/andreisd/Downloads/wetransfer_c_aet_853-csv_2023-02-17_1512/storage.csv";
 		String pathToDischarge = "/home/andreisd/Downloads/wetransfer_c_aet_853-csv_2023-02-17_1512/AET.csv";
@@ -53,7 +52,7 @@ public class TestRunoff {
 		Integer ID = 853;
 		// canopyOUT.WaterBudgetCanopyOUT waterBudget= new
 		// canopyOUT.WaterBudgetCanopyOUT();
-		//simpleBucket.WaterBudget waterBudget = new simpleBucket.WaterBudget();
+		// simpleBucket.WaterBudget waterBudget = new simpleBucket.WaterBudget();
 		WaterBudget waterBudget = new WaterBudget();
 
 		int t = 1;
@@ -71,7 +70,7 @@ public class TestRunoff {
 			DischargeReader.nextRecord();
 			System.out.println(DischargeReader.tCurrent);
 			HashMap<Integer, double[]> id2ValueMap = DischargeReader.outData;
-			waterBudget.inHMRechargeValues= id2ValueMap;
+			waterBudget.inHMRechargeValues = id2ValueMap;
 			double inRain = id2ValueMap.get(ID)[0];
 			waterBudget.process();
 
@@ -82,19 +81,14 @@ public class TestRunoff {
 			if (t > 1) {
 
 				double sto = outHMStorage.get(ID)[0];
-                double tmpBalance =  sto - s - inRain + outHMDischargeMM.get(ID)[0];
-				balance = balance +Math.abs(tmpBalance) ;
-				if (tmpBalance > 0.001) {
-					System.out.println(waterBudget.outHMError.get(ID)[0]);
-					System.out.println(sto);
-					System.out.println(s);
-					System.out.println(inRain);
-					System.out.println(outHMDischargeMM.get(ID)[0]);
+				double tmpBalance = sto - s - inRain + outHMDischargeMM.get(ID)[0];
+				balance = balance + Math.abs(tmpBalance);
+				//	System.out.println(waterBudget.outHMError.get(ID)[0]);
 
 					System.out.println(tmpBalance);
 
 					System.out.println("********************");
-				}
+				
 
 			}
 
