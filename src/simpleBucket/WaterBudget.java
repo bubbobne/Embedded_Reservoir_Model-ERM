@@ -141,11 +141,11 @@ public class WaterBudget {
 	}
 
 	// compute dS/dt
-	public double[] computeFunction( double Sn) {
+	public double[] computeFunction(double Sn) {
 		if (Sn < 0) {
 			Sn = 0;
 		}
-		double out = computeRunoff( Sn);
+		double out = computeRunoff(Sn);
 		double fun = recharge - out;
 		return new double[] { fun, out };
 	}
@@ -165,6 +165,7 @@ public class WaterBudget {
 		double t = 0;
 		double dt = 0.01;
 		double dtMin = 0.01;
+		double dtMax = 0.1;
 		double dSMax = 0.1;
 		double dSMin = 0.01;
 		double dSToll = 0.01;
@@ -172,60 +173,65 @@ public class WaterBudget {
 		double balance = 0;
 		double Sn1 = 0;
 		double test = 0;
-		double in = recharge * dtMin;
 
 		while (t <= 1.0) {
-			double[] k1 = computeFunction( Sn);
-			double[] k2 = computeFunction( Sn + 0.5 * dt * k1[0]);
-			double[] k3 = computeFunction( Sn + 0.5 * dt * k2[0]);
-			double[] k4 = computeFunction( Sn + dt * k3[0]);
 
-			double Sn1OneStep = dt * Utils.getRKMean(k1, k2, k3, k4, 0);
+			double[] k1 = computeFunction(Sn);
+			double[] k2 = computeFunction(Sn + 0.5 * dt * k1[0]);
+			double[] k3 = computeFunction(Sn + 0.5 * dt * k2[0]);
+			double[] k4 = computeFunction(Sn + dt * k3[0]);
+
+			double Sn1OneStep = Utils.getRKMean(k1, k2, k3, k4, 0);
 			double runoffOneStep = Utils.getRKMean(k1, k2, k3, k4, 1);
 			// double deltaRunoff = runoffOneStep;
-			k2 = computeFunction( Sn + 0.25 * dt * k1[0]);
+			k2 = computeFunction(Sn + 0.25 * dt * k1[0]);
 			k3 = computeFunction(Sn + 0.25 * dt * k2[0]);
 			k4 = computeFunction(Sn + 0.5 * dt * k3[0]);
-			double Sn1HalfStep = dt * Utils.getRKMean(k1, k2, k3, k4, 0, 12);
-			double runoffHalfStep = Utils.getRKMean(k1, k2, k3, k4, 1, 12);
+			double Sn1HalfStep = Utils.getRKMean(k1, k2, k3, k4, 0);
+			double runoffHalfStep = Utils.getRKMean(k1, k2, k3, k4, 1);
 
-			k2 = computeFunction( Sn + dt * k1[0]);
+			k2 = computeFunction(Sn + dt * k1[0]);
 			k3 = computeFunction(Sn + dt * k2[0]);
-			k4 = computeFunction( Sn + 2 * dt * k3[0]);
-			double Sn1DoubleStep = dt * Utils.getRKMean(k1, k2, k3, k4, 0, 3);
-			double runoffDpubleStep = Utils.getRKMean(k1, k2, k3, k4, 1, 3);
+			k4 = computeFunction(Sn + 2 * dt * k3[0]);
+			double Sn1DoubleStep = Utils.getRKMean(k1, k2, k3, k4, 0);
+			double runoffDpubleStep = Utils.getRKMean(k1, k2, k3, k4, 1);
 
 			double deltaRunoff = 0;
-			if (Math.abs(Sn1OneStep) < dSToll) {
+			if (Math.abs(dt * Sn1OneStep) < dSToll) {
+				deltaRunoff = runoffOneStep;
+				Sn1 = Sn + dt * Sn1OneStep;
+				t = t + dt;
 				if (dt != dtMin) {
 					dt = dtMin;
 				}
-				deltaRunoff = runoffOneStep;
-				Sn1 = Sn + Sn1OneStep;
 			} else {
-				if (Math.abs(Sn1OneStep) > dSToll
+				if (Math.abs(dt * Sn1OneStep) > dSToll
 						&& Math.abs(Sn1OneStep - Sn1HalfStep) / Math.abs(Sn1OneStep) > dSMax) {
-					dt = dt / 2; // Error is too large; decrease step size.
-					Sn1 = Sn + Sn1HalfStep;
+					dt = dt / 2; 
+					Sn1 = Sn + dt * Sn1HalfStep;
 					deltaRunoff = runoffHalfStep;
 
-				} else if (Math.abs(Sn1OneStep) > dSToll
+				} else if (dt*2<dtMax &&   Math.abs(dt * Sn1OneStep) > dSToll
 						&& Math.abs(Sn1OneStep - Sn1DoubleStep) / Math.abs(Sn1OneStep) < dSMin) {
-					dt = dt * 2; // Larger error is acceptable; increase step size.
-					Sn1 = Sn + Sn1DoubleStep;
+					dt = dt * 2; 
+					Sn1 = Sn + dt * Sn1DoubleStep;
 					deltaRunoff = runoffDpubleStep;
 
 				} else {
-					Sn1 = Sn + Sn1OneStep;// This step size is just right.
+					Sn1 = Sn + dt * Sn1OneStep;
 					deltaRunoff = runoffOneStep;
 
 				}
+				t = t + dt;
 			}
-			t = t + dt;
 
 			runoff = runoff + dt * deltaRunoff;
-			balance = balance + Sn - Sn1 + dt*in - dt * deltaRunoff;
+			balance = balance + Sn - Sn1 + dt * recharge - dt * deltaRunoff;
 			Sn = Sn1;
+			if(t+dt>1.0) {
+				dt = 1.00000000001-t;
+			}
+			System.out.println(t);
 		}
 		return new double[] { Sn1, balance, runoff };
 	}
