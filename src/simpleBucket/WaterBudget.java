@@ -164,7 +164,7 @@ public class WaterBudget {
 		double Sn0 = Sn;
 		double t = 0;
 		double dt = 0.01;
-		double dtMin = 0.01;
+		double dtMin = 0.0001;
 		double dtMax = 0.1;
 		double dSMax = 0.1;
 		double dSMin = 0.01;
@@ -174,7 +174,7 @@ public class WaterBudget {
 		double Sn1 = 0;
 		double test = 0;
 
-		while (t <= 1.0) {
+		while (t < 1.0) {
 
 			double[] k1 = computeFunction(Sn);
 			double[] k2 = computeFunction(Sn + 0.5 * dt * k1[0]);
@@ -195,7 +195,7 @@ public class WaterBudget {
 			k4 = computeFunction(Sn + 2 * dt * k3[0]);
 			double Sn1DoubleStep = Utils.getRKMean(k1, k2, k3, k4, 0);
 			double runoffDpubleStep = Utils.getRKMean(k1, k2, k3, k4, 1);
-
+  
 			double deltaRunoff = 0;
 			if (Math.abs(dt * Sn1OneStep) < dSToll) {
 				deltaRunoff = runoffOneStep;
@@ -229,9 +229,8 @@ public class WaterBudget {
 			balance = balance + Sn - Sn1 + dt * recharge - dt * deltaRunoff;
 			Sn = Sn1;
 			if(t+dt>1.0) {
-				dt = 1.00000000001-t;
+				dt = 1.0-t;
 			}
-			System.out.println(t);
 		}
 		return new double[] { Sn1, balance, runoff };
 	}
