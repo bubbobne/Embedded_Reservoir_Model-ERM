@@ -17,6 +17,8 @@ import oms3.annotations.Execute;
 import oms3.annotations.In;
 import oms3.annotations.Out;
 import oms3.annotations.Unit;
+import rungekutta.RunOffRK;
+import rungekutta.RungeKutta;
 import rungekutta.Utils;
 
 /**
@@ -26,7 +28,7 @@ import rungekutta.Utils;
  * 
  * @author Marialaura Bancheri, Riccardo Busti
  */
-public class WaterBudget {
+public class WaterBudget2 {
 
 	@Description("Input recharge Hashmap")
 	@In
@@ -84,6 +86,7 @@ public class WaterBudget {
 	int step;
 	double recharge;
 	double CI;
+	RungeKutta rk = null;
 
 	/**
 	 * Process: reading of the data, computation of the storage and outflows
@@ -104,10 +107,9 @@ public class WaterBudget {
 			recharge = inHMRechargeValues.get(ID)[0];
 			if (isNovalue(recharge))
 				recharge = 0;
-
 			if (step == 0) {
 				System.out.println("RU--c:" + c + "-d:" + d + "-s_RunoffMax:" + s_RunoffMax);
-
+				rk = new RunOffRK(c, d, s_RunoffMax);
 				if (initialConditionS_i != null) {
 					CI = initialConditionS_i.get(ID)[0];
 					if (isNovalue(CI))
@@ -121,14 +123,14 @@ public class WaterBudget {
 
 			// solve S at t^n+1
 
-			double[] output = RK4(CI);
+			double[] output = rk.run(CI, recharge, 0.01);
 			double waterStorage = output[0];
 			if (waterStorage < 0)
 				waterStorage = 0;
-			double error = output[1];
+			double error = output[2];
 
 			// update variables at t^n+1
-			double runoff_mm = output[2];
+			double runoff_mm = output[1];
 			double runoff = runoff_mm * m3s;
 
 			// save results
@@ -140,101 +142,6 @@ public class WaterBudget {
 		step++;
 	}
 
-	// compute dS/dt
-	public double[] computeFunction(double Sn) {
-		if (Sn < 0) {
-			Sn = 0;
-		}
-		double out = computeRunoff(Sn);
-		double fun = recharge - out;
-		return new double[] { fun, out };
-	}
-
-	// compute deep discharge
-	public double computeRunoff(double Sn) {
-		// double out = Math.max(c,recharge) * Math.pow(Sn / s_RunoffMax, d);
-		double out = c * Math.pow(Math.min(1, Sn / s_RunoffMax), d);
-		out = out + Math.max(0, Sn - s_RunoffMax + recharge - out);
-		out = Math.min(Sn + recharge, out);
-		return out;
-	}
-
-	// RK4
-	public double[] RK4(double Sn) {
-		double Sn0 = Sn;
-		double t = 0;
-		double dt = 0.01;
-		double dtMin = 0.01;
-		double dtMax = 0.1;
-		double dSMax = 0.1;
-		double dSMin = 0.01;
-		double dSToll = 0.01;
-		double runoff = 0;
-		double balance = 0;
-		double Sn1 = 0;
-//	    dSToll = 0.001 * Sn;
-
-		while (t < 1.0) {
-
-			double[] k1 = computeFunction(Sn);
-			double[] k2 = computeFunction(Sn + 0.5 * dt * k1[0]);
-			double[] k3 = computeFunction(Sn + 0.5 * dt * k2[0]);
-			double[] k4 = computeFunction(Sn + dt * k3[0]);
-
-			double Sn1OneStep = Utils.getRKMean(k1, k2, k3, k4, 0);
-			double runoffOneStep = Utils.getRKMean(k1, k2, k3, k4, 1);
-			// double deltaRunoff = runoffOneStep;
-			k2 = computeFunction(Sn + 0.25 * dt * k1[0]);
-			k3 = computeFunction(Sn + 0.25 * dt * k2[0]);
-			k4 = computeFunction(Sn + 0.5 * dt * k3[0]);
-			double Sn1HalfStep = Utils.getRKMean(k1, k2, k3, k4, 0);
-			double runoffHalfStep = Utils.getRKMean(k1, k2, k3, k4, 1);
-
-			k2 = computeFunction(Sn + dt * k1[0]);
-			k3 = computeFunction(Sn + dt * k2[0]);
-			k4 = computeFunction(Sn + 2 * dt * k3[0]);
-			double Sn1DoubleStep = Utils.getRKMean(k1, k2, k3, k4, 0);
-			double runoffDpubleStep = Utils.getRKMean(k1, k2, k3, k4, 1);
-  
-			double deltaRunoff = 0;
-			if (Math.abs(dt * Sn1OneStep) < dSToll) {
-				deltaRunoff = runoffOneStep;
-				Sn1 = Sn + dt * Sn1OneStep;
-				t = t + dt;
-				if (dt != dtMin) {
-					dt = dtMin;
-				}
-			} else {
-				if (Math.abs(dt * Sn1OneStep) > dSToll
-						&& Math.abs(Sn1OneStep - Sn1HalfStep) / Math.abs(Sn1OneStep) > dSMax) {
-					dt = dt / 2; 
-					Sn1 = Sn + dt * Sn1HalfStep;
-					deltaRunoff = runoffHalfStep;
-
-				} else if (dt*2<dtMax && 2*dt+t<=1.0 &&   Math.abs(dt * Sn1OneStep) > dSToll
-						&& Math.abs(Sn1OneStep - Sn1DoubleStep) / Math.abs(Sn1OneStep) < dSMin) {
-					dt = dt * 2; 
-					Sn1 = Sn + dt * Sn1DoubleStep;
-					deltaRunoff = runoffDpubleStep;
-
-				} else {
-					Sn1 = Sn + dt * Sn1OneStep;
-					deltaRunoff = runoffOneStep;
-
-				}
-				t = t + dt;
-			}
-
-			runoff = runoff + dt * deltaRunoff;
-			balance = balance + Sn - Sn1 + dt * recharge - dt * deltaRunoff;
-			Sn = Sn1;
-			if(t+dt>1.0) {
-				dt = 1.0-t;
-			}
-		}
-		return new double[] { Sn1, balance, runoff };
-	}
-
 	private void storeResult_series(int ID, double S, double r_mm, double r, double err) {
 
 		outHMStorage.put(ID, new double[] { S });
@@ -243,6 +150,4 @@ public class WaterBudget {
 		outHMError.put(ID, new double[] { err });
 
 	}
-
-	
 }

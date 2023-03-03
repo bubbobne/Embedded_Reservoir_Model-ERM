@@ -12,7 +12,7 @@ import simpleBucket.WaterBudget2;
 
 //0.07278611961063386
 
-public class TestRunoff {
+public class TestRunoff2 {
 
 	@Test
 	public void testLinear() throws Exception {
@@ -54,13 +54,13 @@ public class TestRunoff {
 		// canopyOUT.WaterBudgetCanopyOUT waterBudget= new
 		// canopyOUT.WaterBudgetCanopyOUT();
 		// simpleBucket.WaterBudget waterBudget = new simpleBucket.WaterBudget();
-		WaterBudget2 waterBudget = new WaterBudget2();
+		WaterBudget waterBudget = new WaterBudget();
 
 		int t = 1;
 		double s = 0;
 		double balance = 0;
 		long startTime = System.currentTimeMillis();
-		// ... do something ...
+
 		while (DischargeReader.doProcess) {
 
 			waterBudget.s_RunoffMax = 34.90;
@@ -88,10 +88,9 @@ public class TestRunoff {
 				balance = balance + Math.abs(tmpBalance);
 				//	System.out.println(waterBudget.outHMError.get(ID)[0]);
 
-			//	System.out.println("sn:"+sto+"  runoff  "+ outHMDischargeMM.get(ID)[0]);
-				System.out.println(tmpBalance);
+					System.out.println("sn:"+sto+"  runoff  "+ outHMDischargeMM.get(ID)[0]);
 
-				System.out.println("********************");
+					System.out.println("********************");
 				
 			
 			}
@@ -103,7 +102,7 @@ public class TestRunoff {
 		long estimatedTime = System.currentTimeMillis() - startTime;
 
 		System.out.println(balance);
-System.out.println(estimatedTime);
+        System.out.println(estimatedTime);
 		DischargeReader.close();
 
 	}

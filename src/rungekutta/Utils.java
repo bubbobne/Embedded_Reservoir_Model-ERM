@@ -1,6 +1,6 @@
 
 
-package utility;
+package rungekutta;
 
 
 public class Utils {

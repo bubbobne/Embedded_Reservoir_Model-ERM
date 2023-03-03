@@ -1,6 +1,7 @@
 package canopyOut;
 
 import static org.hortonmachine.gears.libs.modules.HMConstants.isNovalue;
+import static rungekutta.Utils.getRKMean;
 
 import java.util.HashMap;
 import java.util.Set;
@@ -9,8 +10,7 @@ import java.util.Map.Entry;
 import oms3.annotations.Description;
 import oms3.annotations.Execute;
 import oms3.annotations.In;
-import oms3.annotations.Out;
-import static utility.Utils.getRKMean;;
+import oms3.annotations.Out;;
 
 /**
  * The component solves the budget for the outer part of the canopy layer.

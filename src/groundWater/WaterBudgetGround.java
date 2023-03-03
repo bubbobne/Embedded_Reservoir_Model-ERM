@@ -20,7 +20,7 @@
 package groundWater;
 
 import static org.hortonmachine.gears.libs.modules.HMConstants.isNovalue;
-import static utility.Utils.getRKMean;
+import static rungekutta.Utils.getRKMean;
 
 import java.util.HashMap;
 import java.util.Set;
