@@ -1,0 +1,56 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+sourceCompatibility = '1.8'
+
+// to get project version from command line, just type
+// $ gradle -PprojVersion=<version_number> build
+// default is na
+if (project.hasProperty('projVersion')) {
+      project.version = project.projVersion
+} else {
+      project.version = 'na'
+}
+
+// name with versioning of the jar file
+jar {
+    manifest {
+        attributes 'Implementation-Title' : 'ERM',
+                   'Implementation-Version': version
+    }
+}
+
+// no local repositories
+repositories {
+
+    maven {
+        url 'https://repo.osgeo.org/repository/release'
+    }
+
+    maven {
+        // hatbox 1.0.b7
+        url 'https://maven.geo-solutions.it/'
+    }
+
+    mavenCentral() //jgt
+
+
+}
+
+dependencies {
+
+    implementation 'org.slf4j:slf4j-api:1.7.21'
+    //compile name: 'log4j'
+    implementation group: 'org.hortonmachine', name: 'hm-gears', version: '0.10.4'    
+    implementation 'org.apache.commons:commons-math3:3.6.1'
+    
+    // https://mvnrepository.com/artifact/junit/junit
+	testImplementation group: 'junit', name: 'junit', version: '4.12'
+
+	// https://mvnrepository.com/artifact/log4j/log4j
+	implementation group: 'log4j', name: 'log4j', version: '1.2.17'
+
+
+}

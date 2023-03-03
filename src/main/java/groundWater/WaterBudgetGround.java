@@ -20,23 +20,26 @@
 package groundWater;
 
 import static org.hortonmachine.gears.libs.modules.HMConstants.isNovalue;
-import static rungekutta.Utils.getRKMean;
 
 import java.util.HashMap;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import oms3.annotations.Description;
 import oms3.annotations.Execute;
 import oms3.annotations.In;
 import oms3.annotations.Out;
+import rungekutta.OneOutRungeKutta;
+import rungekutta.RungeKutta;
+import utils.Utility;
 
 /**
  * The Class WaterBudget solves the water budget equation for the groudwater
  * layer. The input s the recharge from the root zone and the output is the
  * discharge, modeled with a non linear reservoir model.
  * 
- * @author Marialaura Bancheri, Riccardo Busti
+ * @author Marialaura Bancheri, Riccardo Busti, Giuseppe Formetta, Daniele
+ *         Andreis
  */
 public class WaterBudgetGround {
 
@@ -95,6 +98,8 @@ public class WaterBudgetGround {
 	int step;
 	double recharge;
 	double CI;
+	RungeKutta rk = null;
+	double m3s = 0;
 
 	/**
 	 * Process: reading of the data, computation of the storage and outflows
@@ -117,28 +122,18 @@ public class WaterBudgetGround {
 				recharge = 0;
 
 			if (step == 0) {
-				System.out.println("GW--e:" + e + "-f:" + f + "-s_GroundWaterMax:" + s_GroundWaterMax);
-
-				if (initialConditionS_i != null) {
-					CI = initialConditionS_i.get(ID)[0];
-					if (isNovalue(CI))
-						CI = 0.01 * s_GroundWaterMax;
-				} else {
-					CI = 0.01 * s_GroundWaterMax;
-				}
+				init(ID);
 			}
 
-			double m3s = A * Math.pow(10, 3) / (tTimestep * 60);
-
 			// solve S at t^n+1
-			double[] out = RK4(CI);
+			double[] out = rk.run(CI, recharge, 0.01);
 			double waterStorage = out[0];
 			if (waterStorage < 0)
 				waterStorage = 0;
-			double error = out[1];
+			double error = out[2];
 
 			// update variables at t^n+1
-			double deep_mm = out[2];
+			double deep_mm = out[1];
 			double deep = deep_mm * m3s;
 
 			// save results
@@ -148,38 +143,20 @@ public class WaterBudgetGround {
 			CI = waterStorage;
 		}
 		step++;
+
 	}
 
-	// compute dS/dt
-	public double[] computeFunction(double Sn) {
-		if (Sn < 0) {
-			Sn = 0;
+	private void init(Integer ID) {
+		System.out.println("GW--e:" + e + "-f:" + f + "-s_GroundWaterMax:" + s_GroundWaterMax);
+		rk = new OneOutRungeKutta(e, f, s_GroundWaterMax);
+		m3s = Utility.getCOnversionToM3SCoeff(A, tTimestep);
+		if (initialConditionS_i != null) {
+			CI = initialConditionS_i.get(ID)[0];
+			if (isNovalue(CI))
+				CI = 0.01 * s_GroundWaterMax;
+		} else {
+			CI = 0.01 * s_GroundWaterMax;
 		}
-		double deep = computeDeep(Sn);
-		double fun = recharge - deep;
-		return new double[] { fun, deep };
-	}
-
-	// compute deep discharge
-	public double computeDeep(double Sn) {
-		double out = e * Math.pow(Math.min(1, Sn / s_GroundWaterMax), f);
-		out = out + Math.max(0, Sn - s_GroundWaterMax + recharge - out);
-		return Math.min(Sn + recharge, out);
-	}
-
-	// RK4
-	public double[] RK4(double Sn) {
-
-		double balance = 0;
-		double[] k1 = computeFunction(Sn);
-		double[] k2 = computeFunction(Sn + 0.5 * k1[0]);
-		double[] k3 = computeFunction(Sn + 0.5 * k2[0]);
-		double[] k4 = computeFunction(Sn + k3[0]);
-		double Sn1 = Sn + getRKMean(k1, k2, k3, k4, 0);
-		double deltaDeep = getRKMean(k1, k2, k3, k4, 1);
-		balance = balance + Math.abs(Sn - Sn1 + recharge - deltaDeep);
-		return new double[] { Sn1, balance, deltaDeep };
-
 	}
 
 	private void storeResult_series(int ID, double S, double d_mm, double d, double err) {

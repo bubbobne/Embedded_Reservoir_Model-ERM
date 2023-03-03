@@ -1,23 +1,24 @@
 package canopyOut;
 
 import static org.hortonmachine.gears.libs.modules.HMConstants.isNovalue;
-import static rungekutta.Utils.getRKMean;
 
 import java.util.HashMap;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import oms3.annotations.Description;
 import oms3.annotations.Execute;
 import oms3.annotations.In;
-import oms3.annotations.Out;;
+import oms3.annotations.Out;
+import rungekutta.CanopyRungeKutta;
+import rungekutta.RungeKutta;;
 
 /**
  * The component solves the budget for the outer part of the canopy layer.
  * Inputs are: the rain and the potential evapotranspiration Outputs are: the
  * storage and the throughfall.
  * 
- * @author Marialaura Bancheri, Riccardo Busti
+ * @author Marialaura Bancheri, Riccardo Busti, Giuseppe Formetta, Daniele Andreis
  * 
  */
 
@@ -88,6 +89,7 @@ public class WaterBudgetCanopyOUT {
 	double CI;
 	double ETp;
 	double s_CanopyMax;
+	RungeKutta rk = null;
 
 	/**
 	 * Process: reading of the data, computation of the storage and outflows
@@ -120,6 +122,7 @@ public class WaterBudgetCanopyOUT {
 
 			if (step == 0) {
 				System.out.println("C--kc:" + kc + "-p:" + p);
+				rk = new CanopyRungeKutta(ETp, s_CanopyMax);
 
 				if (initialConditionS_i != null) {
 					CI = initialConditionS_i.get(ID)[0];
@@ -135,18 +138,18 @@ public class WaterBudgetCanopyOUT {
 			double actualInput = (1 - p) * rain;
 
 			// solve S at t^n+1
-			double[] out = RK4(CI, actualInput);
+			double[] out = rk.run(CI,actualInput, 0.01);
 			double waterStorage = out[0];
 			if (waterStorage < 0)
 				waterStorage = 0;
-			double error = out[1];
-
+			double aet = out[1];
+			
 			// update variables at t^n+1
-			double actualOutput = out[3];
+			double actualOutput = out[2];
 			double throughfall = actualOutput + p * rain;
-			double AET = out[2];
+			double error = out[3];
 			// export to timeseries
-			storeResult_series(ID, waterStorage, throughfall, AET, actualInput, actualOutput, error);
+			storeResult_series(ID, waterStorage, throughfall, aet, actualInput, actualOutput, error);
 
 			// set new IC
 			CI = waterStorage;
@@ -155,45 +158,8 @@ public class WaterBudgetCanopyOUT {
 		step++;
 	}
 
-	// compute dS/dt
-	public double[] computeFunction(double Sn, double in) {
-		if (Sn < 0) {
-			Sn = 0;
-		}
-		double et = computeAET(Sn, in);
-		double actualOut = computeActualOutput(Sn, in, et);
-		return new double[] { in - et - actualOut, et, actualOut };
-	}
 
-	// compute AET
-	public double computeAET(double Sn, double in) {
-		return Math.min(Math.max(0, Sn + in), ETp * Math.min(1, Sn / s_CanopyMax));
-	}
 
-	// compute actual output
-	public double computeActualOutput(double Sn, double in, double et) {
-		return Math.max(0, Sn + in - et - s_CanopyMax);
-	}
-
-	// RK4
-	public double[] RK4(double Sn, double in) {
-
-		double balance = 0;
-
-		double[] k1 = computeFunction(Sn, in);
-		double[] k2 = computeFunction(Sn + 0.5 * k1[0], in);
-		double[] k3 = computeFunction(Sn + 0.5 * k2[0], in);
-		double[] k4 = computeFunction(Sn + k3[0], in);
-		double Sn1 = Sn + getRKMean(k1, k2, k3, k4, 0);
-		double aet = getRKMean(k1, k2, k3, k4, 1);
-		double actualOut = getRKMean(k1, k2, k3, k4, 2);
-		;
-		balance = balance + Sn - Sn1 + in - aet - actualOut;
-
-		return new double[] { Sn1, balance, aet, actualOut };
-	}
-
-	// store results
 	private void storeResult_series(int ID, double S, double tr, double aet, double in, double out, double err) {
 
 		outHMStorage.put(ID, new double[] { S });

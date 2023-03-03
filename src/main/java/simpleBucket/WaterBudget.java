@@ -17,7 +17,7 @@ import oms3.annotations.Execute;
 import oms3.annotations.In;
 import oms3.annotations.Out;
 import oms3.annotations.Unit;
-import rungekutta.RunOffRK;
+import rungekutta.OneOutRungeKutta;
 import rungekutta.RungeKutta;
 import rungekutta.Utils;
 
@@ -26,9 +26,10 @@ import rungekutta.Utils;
  * The input s the recharge from the root zone and the output is the discharge,
  * modeled with a non linear reservoir model.
  * 
- * @author Marialaura Bancheri, Riccardo Busti
+ * @author Marialaura Bancheri, Riccardo Busti, Giuseppe Formetta, Daniele
+ *         Andreis
  */
-public class WaterBudget2 {
+public class WaterBudget {
 
 	@Description("Input recharge Hashmap")
 	@In
@@ -87,6 +88,7 @@ public class WaterBudget2 {
 	double recharge;
 	double CI;
 	RungeKutta rk = null;
+	double m3s = 0;
 
 	/**
 	 * Process: reading of the data, computation of the storage and outflows
@@ -96,10 +98,8 @@ public class WaterBudget2 {
 	@Execute
 	public void process() throws Exception {
 
-		// reading the ID of all the stations
 		Set<Entry<Integer, double[]>> entrySet = inHMRechargeValues.entrySet();
 
-		// iterate over the station
 		for (Entry<Integer, double[]> entry : entrySet) {
 			Integer ID = entry.getKey();
 
@@ -108,20 +108,8 @@ public class WaterBudget2 {
 			if (isNovalue(recharge))
 				recharge = 0;
 			if (step == 0) {
-				System.out.println("RU--c:" + c + "-d:" + d + "-s_RunoffMax:" + s_RunoffMax);
-				rk = new RunOffRK(c, d, s_RunoffMax);
-				if (initialConditionS_i != null) {
-					CI = initialConditionS_i.get(ID)[0];
-					if (isNovalue(CI))
-						CI = 0.5 * s_RunoffMax;
-				} else {
-					CI = 0.5 * s_RunoffMax;
-				}
+				init(ID);
 			}
-
-			double m3s = A * Math.pow(10, 3) / (tTimestep * 60);
-
-			// solve S at t^n+1
 
 			double[] output = rk.run(CI, recharge, 0.01);
 			double waterStorage = output[0];
@@ -129,17 +117,27 @@ public class WaterBudget2 {
 				waterStorage = 0;
 			double error = output[2];
 
-			// update variables at t^n+1
 			double runoff_mm = output[1];
 			double runoff = runoff_mm * m3s;
 
-			// save results
 			storeResult_series(ID, waterStorage, runoff_mm, runoff, error);
 
-			// update storage
 			CI = waterStorage;
 		}
 		step++;
+	}
+
+	private void init(Integer ID) {
+		System.out.println("RU--c:" + c + "-d:" + d + "-s_RunoffMax:" + s_RunoffMax);
+		rk = new OneOutRungeKutta(c, d, s_RunoffMax);
+		m3s = A * Math.pow(10, 3) / (tTimestep * 60);
+		if (initialConditionS_i != null) {
+			CI = initialConditionS_i.get(ID)[0];
+			if (isNovalue(CI))
+				CI = 0.5 * s_RunoffMax;
+		} else {
+			CI = 0.5 * s_RunoffMax;
+		}
 	}
 
 	private void storeResult_series(int ID, double S, double r_mm, double r, double err) {

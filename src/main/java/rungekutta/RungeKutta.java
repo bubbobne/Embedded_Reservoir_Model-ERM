@@ -1,5 +1,9 @@
 package rungekutta;
-
+/**
+ * 
+ * @author Giuseppe Formetta, Daniele Andreis
+ *
+ */
 public abstract class RungeKutta {
 	private final static double[] oneStepCoefficent = new double[] { 0.5, 0.5, 1 };
 	private final static double[] halfStepCoefficent = new double[] { 0.25, 0.25, 0.5 };
@@ -23,7 +27,6 @@ public abstract class RungeKutta {
 		output[0] = storageStart;
 	    dSToll = 0.001 * storageStart;
 		while (t < 1.0) {
-
 			double[] k1 = computeFunction(output[0], in);
 			double[] oneStepValue = this.computeValue(output[0], dt, k1, oneStepCoefficent, in);
 			double oneStepSlope = oneStepValue[0];
@@ -33,7 +36,6 @@ public abstract class RungeKutta {
 				t = t + dt;
 				dt = checkDt(t, dtMin);
 				continue;
-
 			}
 			double[] halfStepValue = this.computeValue(output[0], dt, k1, halfStepCoefficent, in);
 			double halfStepSlope = halfStepValue[0];
@@ -44,7 +46,6 @@ public abstract class RungeKutta {
 				dt = checkDt(t, dt/2);
 				continue;
 			}
-
 			double[] doubleStepValue = this.computeValue(output[0], dt, k1, doubleStepCoefficent, in);
 			double Sn1DoubleStep = doubleStepValue[0];
 

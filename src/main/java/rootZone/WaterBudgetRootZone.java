@@ -20,21 +20,24 @@
 package rootZone;
 
 import static org.hortonmachine.gears.libs.modules.HMConstants.isNovalue;
-import static rungekutta.Utils.getRKMean;
 
 import java.util.HashMap;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import oms3.annotations.Description;
 import oms3.annotations.Execute;
 import oms3.annotations.In;
-import oms3.annotations.Out;;
+import oms3.annotations.Out;
+import rungekutta.RootZoneRungeKutta;
+import utils.Utility;;
+
 /**
  * The Class WaterBudget solves the water budget equation for the root zone
  * layer.
  * 
- * @author Marialaura Bancheri, Riccardo Busti
+ * @author Marialaura Bancheri, Riccardo Busti, Giuseppe Formetta, Daniele
+ *         Andreis
  */
 public class WaterBudgetRootZone {
 
@@ -46,7 +49,7 @@ public class WaterBudgetRootZone {
 	@In
 	public HashMap<Integer, double[]> inHMEwc;
 
-	@Description("Input ET Hashmap")
+	@Description("Input ET Hashmap") 
 	@In
 	public HashMap<Integer, double[]> inHMETp;
 
@@ -81,7 +84,7 @@ public class WaterBudgetRootZone {
 	public double s_RootZoneMax;
 
 	@Description("CI of the water storage")
-	@In
+	@In 
 	@Out
 	public double s_RootZoneCI;
 
@@ -121,7 +124,7 @@ public class WaterBudgetRootZone {
 	@Out
 	public HashMap<Integer, double[]> outHMR = new HashMap<Integer, double[]>();
 
-	@Description("The output HashMap with the quick outflow ")
+	@Description("The output HashMap with the quick outflow ") 
 	@Out
 	public HashMap<Integer, double[]> outHMquick = new HashMap<Integer, double[]>();
 
@@ -143,6 +146,8 @@ public class WaterBudgetRootZone {
 	double ETp;
 	double Ewc;
 	double ETpNet;
+	RootZoneRungeKutta rk = null;
+	double m3s = 0;
 
 	/**
 	 * Process: reading of the data, computation of the storage and outflows
@@ -175,122 +180,44 @@ public class WaterBudgetRootZone {
 				Ewc = 0;
 
 			if (step == 0) {
-				System.out.println("RZ--grz:" + g + "-hrz:" + h + "-Smax:" + s_RootZoneMax + "-pB_soil:" + pB_soil);
-
-				if (initialConditionS_i != null) {
-					CI = initialConditionS_i.get(ID)[0];
-					if (isNovalue(CI))
-						CI = s_RootZoneMax * sat_degree;
-
-				} else {
-					CI = s_RootZoneMax * sat_degree;
-				}
+				init(ID);
 			}
 
 			ETpNet = ETp - Ewc;
-			double m3s = A * Math.pow(10, 3) / (tTimestep * 60);
 
-			// solve S at t^n+1
-
-			double[] out = RK4(CI, ETpNet);
+			double[] out = rk.run(CI, rain, ETpNet, 0.001);
 			double waterStorage = out[0];
 			if (waterStorage < 0)
 				waterStorage = 0;
-			double error = out[1];
-
-			// update variables at t^n+1
-			double alfa = out[2];
-			double quick_mm = out[3];
+			double error = out[6];
+			double alfa = out[4];
+			double quick_mm = out[5];
 			double quick = quick_mm * m3s;
-			double actualInput = out[4];
-			double recharge = out[5];
-			double AET = out[6];
+			double actualInput = out[1];
+			double recharge = out[2];
+			double AET = out[3];
 
-			// double alpha=(rain<0.001)?0:alpha(CI,rain,s_RootZoneMax);
-
-			// export to timeseries
 			storeResult_series(ID, waterStorage, actualInput, AET, recharge, quick_mm, quick, alfa, error);
 
-			// set new IC
 			CI = waterStorage;
 		}
 		step++;
 	}
 
-	// compute dS/dt
-	public double[] computeFunction(double Sn, double etpnet) {
-		if (Sn < 0) {
-			Sn = 0;
+	private void init(Integer ID) {
+		System.out.println("RZ--grz:" + g + "-hrz:" + h + "-Smax:" + s_RootZoneMax + "-pB_soil:" + pB_soil);
+		rk = new RootZoneRungeKutta(g, h, s_RootZoneMax, pB_soil);
+		m3s = Utility.getCOnversionToM3SCoeff(A, tTimestep);
+
+		if (initialConditionS_i != null) {
+			CI = initialConditionS_i.get(ID)[0];
+			if (isNovalue(CI))
+				CI = s_RootZoneMax * sat_degree;
+
+		} else {
+			CI = s_RootZoneMax * sat_degree;
 		}
-		double alpha = alpha(Sn, rain);
-		double[] o = actualInputs(Sn, alpha);
-		double actualInputs = o[0];
-		double quick = o[1];
-
-		double aet = computeAET(Sn, actualInputs, etpnet);
-		double recharge = computeR(Sn, actualInputs, aet);
-		double fun = actualInputs - aet - recharge;
-		return new double[] { fun, actualInputs, recharge, aet, alpha, quick };
 	}
-
-	// compute alpha according to Hymod
-	private double alpha(double Sn, double Pval) {
-		double pCmax = s_RootZoneMax * (pB_soil + 1);
-		double coeff1 = 1.0 - ((pB_soil + 1.0) * (Sn) / pCmax);
-		double exp = 1.0 / (pB_soil + 1.0);
-		double ct_prev = pCmax * (1.0 - Math.pow(coeff1, exp));
-		double UT1 = Math.max((Pval - pCmax + ct_prev), 0.0);
-		// Pval = Pval - UT1;
-		double dummy = Math.min(((ct_prev + Pval - UT1) / pCmax), 1.0);
-		double coeff2 = (1.0 - dummy);
-		double exp2 = (pB_soil + 1.0);
-		double xn = (pCmax / (pB_soil + 1.0)) * (1.0 - (Math.pow(coeff2, exp2)));
-		double UT2 = Math.max(Pval - UT1 - (xn - Sn), 0);
-		double alpha = (UT1 + UT2) / Pval;
-		if (isNovalue(alpha) || alpha > 1)
-			alpha = 1;
-		// if (isNovalue(alpha)) alpha= 1;
-		return alpha;
-	}
-
-	// compute actual inputs
-	public double[] actualInputs(double Sn, double alfa) {
-		return new double[] { (1 - alfa) * rain, alfa * rain };
-	}
-
-	// compute groundwater recharge
-	public double computeR(double Sn, double in, double et) {
-		double out = g * Math.pow(Math.min(1, Sn / s_RootZoneMax), h);
-		out = Math.min(Sn + in - et, out + Math.max(0, Sn - s_RootZoneMax + in - et - out));
-		return out;
-
-	}
-
-	// compute AET
-	public double computeAET(double Sn, double in, double etpnet) {
-		return Math.min(Sn + in, etpnet * Math.min(1, 1.33 * Math.min(1, Sn / s_RootZoneMax)));
-	}
-
-	// RK4
-	public double[] RK4(double Sn, double etpnet) {
-
-		double balance = 0;
-		double[] k1 = computeFunction(Sn, etpnet);
-		double[] k2 = computeFunction(Sn + 0.5 * k1[0], etpnet);
-		double[] k3 = computeFunction(Sn + 0.5 * k2[0], etpnet);
-		double[] k4 = computeFunction(Sn + k3[0], etpnet);
-		double Sn1 = Sn + getRKMean(k1, k2, k3, k4, 0);
-		double alpha = getRKMean(k1, k2, k3, k4, 4);
-		double actualInput = getRKMean(k1, k2, k3, k4, 1);
-		double quick = getRKMean(k1, k2, k3, k4, 5);
-		double aet = getRKMean(k1, k2, k3, k4, 3);
-		double recharge = getRKMean(k1, k2, k3, k4, 2);
-		balance = balance + Sn - Sn1 + actualInput - aet - recharge;
-		Sn = Sn1;
-		return new double[] { Sn, balance, alpha, quick, actualInput, recharge, aet };
-	}
-
-
 
 	// store results
 	private void storeResult_series(int ID, double S, double in, double aet, double re, double quick_mm, double quick,
