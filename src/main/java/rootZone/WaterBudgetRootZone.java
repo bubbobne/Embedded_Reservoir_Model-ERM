@@ -49,7 +49,7 @@ public class WaterBudgetRootZone {
 	@In
 	public HashMap<Integer, double[]> inHMEwc;
 
-	@Description("Input ET Hashmap") 
+	@Description("Input ET Hashmap")
 	@In
 	public HashMap<Integer, double[]> inHMETp;
 
@@ -73,18 +73,13 @@ public class WaterBudgetRootZone {
 	@In
 	public double pB_soil;
 
-	// @Description("partitioning coefficient between the root zone and the runoff
-	// reservoirs")
-	// @Out
-	// public double alpha;
-
 	@Description("Maximum value of the water storage, needed for the computation of the Actual EvapoTraspiration")
 	@In
 	@Out
 	public double s_RootZoneMax;
 
 	@Description("CI of the water storage")
-	@In 
+	@In
 	@Out
 	public double s_RootZoneCI;
 
@@ -94,11 +89,8 @@ public class WaterBudgetRootZone {
 
 	@Description("RK iterations")
 	@In
+	@Deprecated
 	public double RKiter = 100;
-
-	// @Description("ODE solver model: dp853, Eulero")
-	// @In
-	// public String solver_model;
 
 	@Description("The area of the HRUs in km2")
 	@In
@@ -106,6 +98,10 @@ public class WaterBudgetRootZone {
 
 	@Description("Time step")
 	@In
+	@Deprecated
+	/**
+	 * only for back-compatibility
+	 */
 	public double tTimestep;
 
 	@Description("The HashMap with the Actual input of the layer ")
@@ -124,7 +120,7 @@ public class WaterBudgetRootZone {
 	@Out
 	public HashMap<Integer, double[]> outHMR = new HashMap<Integer, double[]>();
 
-	@Description("The output HashMap with the quick outflow ") 
+	@Description("The output HashMap with the quick outflow ")
 	@Out
 	public HashMap<Integer, double[]> outHMquick = new HashMap<Integer, double[]>();
 
@@ -141,11 +137,7 @@ public class WaterBudgetRootZone {
 	public HashMap<Integer, double[]> outHMError = new HashMap<Integer, double[]>();
 
 	int step;
-	double rain;
 	double CI;
-	double ETp;
-	double Ewc;
-	double ETpNet;
 	RootZoneRungeKutta rk = null;
 	double m3s = 0;
 
@@ -156,6 +148,10 @@ public class WaterBudgetRootZone {
 	 */
 	@Execute
 	public void process() throws Exception {
+		double ETp = 0;
+		double Ewc = 0;
+		double ETpNet = 0;
+		double rain = 0;
 
 		// reading the ID of all the stations
 		Set<Entry<Integer, double[]>> entrySet = inHMRain.entrySet();
@@ -186,20 +182,9 @@ public class WaterBudgetRootZone {
 			ETpNet = ETp - Ewc;
 
 			double[] out = rk.run(CI, rain, ETpNet, 0.001);
-			double waterStorage = out[0];
-			if (waterStorage < 0)
-				waterStorage = 0;
-			double error = out[6];
-			double alfa = out[4];
-			double quick_mm = out[5];
-			double quick = quick_mm * m3s;
-			double actualInput = out[1];
-			double recharge = out[2];
-			double AET = out[3];
 
-			storeResult_series(ID, waterStorage, actualInput, AET, recharge, quick_mm, quick, alfa, error);
+			storeResultAndUpdate(ID, out);
 
-			CI = waterStorage;
 		}
 		step++;
 	}
@@ -220,16 +205,29 @@ public class WaterBudgetRootZone {
 	}
 
 	// store results
-	private void storeResult_series(int ID, double S, double in, double aet, double re, double quick_mm, double quick,
-			double alf, double err) {
-		outHMActualInput.put(ID, new double[] { in });
-		outHMStorage.put(ID, new double[] { S });
+	private void storeResultAndUpdate(int ID, double[] out) {
+
+		double waterStorage = out[0];
+		if (waterStorage < 0)
+			waterStorage = 0;
+		double error = out[6];
+		double alfa = out[4];
+		double quick_mm = out[5];
+		double quick = quick_mm * m3s;
+		double actualInput = out[1];
+		double recharge = out[2];
+		double aet = out[3];
+
+		CI = waterStorage;
+
+		outHMActualInput.put(ID, new double[] { actualInput });
+		outHMStorage.put(ID, new double[] { waterStorage });
 		outHMEvaporation.put(ID, new double[] { aet });
-		outHMR.put(ID, new double[] { re });
+		outHMR.put(ID, new double[] { recharge });
 		outHMquick.put(ID, new double[] { quick });
 		outHMquick_mm.put(ID, new double[] { quick_mm });
-		outHMalpha.put(ID, new double[] { alf });
-		outHMError.put(ID, new double[] { err });
+		outHMalpha.put(ID, new double[] { alfa });
+		outHMError.put(ID, new double[] { error });
 
 	}
 

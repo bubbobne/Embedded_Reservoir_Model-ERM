@@ -53,6 +53,7 @@ public class WaterBudgetGround {
 
 	@Description("Time Step simulation")
 	@In
+	@Deprecated
 	public double tTimestep;
 
 	@Description("Coefficient of the non-linear Reservoir model ")
@@ -73,11 +74,8 @@ public class WaterBudgetGround {
 
 	@Description("RK iterations")
 	@In
+	@Deprecated
 	public double RKiter = 100;
-
-	// @Description("ODE solver model: dp853, Eulero ")
-	// @In
-	// public String solver_model;
 
 	@Description("The output HashMap with the Water Storage")
 	@Out
@@ -96,7 +94,6 @@ public class WaterBudgetGround {
 	public HashMap<Integer, double[]> outHMError = new HashMap<Integer, double[]>();
 
 	int step;
-	double recharge;
 	double CI;
 	RungeKutta rk = null;
 	double m3s = 0;
@@ -111,6 +108,7 @@ public class WaterBudgetGround {
 
 		// reading the ID of all the stations
 		Set<Entry<Integer, double[]>> entrySet = inHMRechargeValues.entrySet();
+		double recharge;
 
 		// iterate over the station
 		for (Entry<Integer, double[]> entry : entrySet) {
@@ -127,20 +125,10 @@ public class WaterBudgetGround {
 
 			// solve S at t^n+1
 			double[] out = rk.run(CI, recharge, 0.01);
-			double waterStorage = out[0];
-			if (waterStorage < 0)
-				waterStorage = 0;
-			double error = out[2];
-
-			// update variables at t^n+1
-			double deep_mm = out[1];
-			double deep = deep_mm * m3s;
 
 			// save results
-			storeResult_series(ID, waterStorage, deep_mm, deep, error);
+			storeResultAndUpdate(ID, out);
 
-			// update storage
-			CI = waterStorage;
 		}
 		step++;
 
@@ -159,12 +147,22 @@ public class WaterBudgetGround {
 		}
 	}
 
-	private void storeResult_series(int ID, double S, double d_mm, double d, double err) {
+	private void storeResultAndUpdate(int ID, double[] out) {
+		double waterStorage = out[0];
+		if (waterStorage < 0)
+			waterStorage = 0;
+		double error = out[2];
 
-		outHMStorage.put(ID, new double[] { S });
-		outHMDischarge.put(ID, new double[] { d });
-		outHMDischarge_mm.put(ID, new double[] { d_mm });
-		outHMError.put(ID, new double[] { err });
+		// update variables at t^n+1
+		double deep_mm = out[1];
+		double deep = deep_mm * m3s;
+
+		// update storage
+		CI = waterStorage;
+		outHMStorage.put(ID, new double[] { waterStorage});
+		outHMDischarge.put(ID, new double[] { deep });
+		outHMDischarge_mm.put(ID, new double[] { deep_mm });
+		outHMError.put(ID, new double[] { error });
 
 	}
 

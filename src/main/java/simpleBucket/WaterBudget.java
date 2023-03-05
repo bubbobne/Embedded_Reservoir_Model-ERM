@@ -42,6 +42,7 @@ public class WaterBudget {
 	@Description("Time Step simulation")
 	@Unit("minutes")
 	@In
+	@Deprecated
 	public double tTimestep;
 
 	@Description("Coefficient of the non-linear Reservoir model ")
@@ -62,11 +63,8 @@ public class WaterBudget {
 
 	@Description("RK iterations")
 	@In
+	@Deprecated
 	public double RKiter = 100;
-
-	// @Description("ODE solver model: dp853, Eulero ")
-	// @In
-	// public String solver_model;
 
 	@Description("The output HashMap with the Water Storage")
 	@Out
@@ -112,17 +110,9 @@ public class WaterBudget {
 			}
 
 			double[] output = rk.run(CI, recharge, 0.01);
-			double waterStorage = output[0];
-			if (waterStorage < 0)
-				waterStorage = 0;
-			double error = output[2];
 
-			double runoff_mm = output[1];
-			double runoff = runoff_mm * m3s;
+			storeResult_series(ID, output);
 
-			storeResult_series(ID, waterStorage, runoff_mm, runoff, error);
-
-			CI = waterStorage;
 		}
 		step++;
 	}
@@ -140,12 +130,18 @@ public class WaterBudget {
 		}
 	}
 
-	private void storeResult_series(int ID, double S, double r_mm, double r, double err) {
-
-		outHMStorage.put(ID, new double[] { S });
-		outHMDischarge.put(ID, new double[] { r });
-		outHMDischarge_mm.put(ID, new double[] { r_mm });
-		outHMError.put(ID, new double[] { err });
+	private void storeResult_series(int ID, double[] output) {
+		double waterStorage = output[0];
+		if (waterStorage < 0)
+			waterStorage = 0;
+		double error = output[2];
+		double runoff_mm = output[1];
+		double runoff = runoff_mm * m3s;
+		CI = waterStorage;
+		outHMStorage.put(ID, new double[] { waterStorage });
+		outHMDischarge.put(ID, new double[] { runoff });
+		outHMDischarge_mm.put(ID, new double[] { runoff_mm });
+		outHMError.put(ID, new double[] { error });
 
 	}
 }

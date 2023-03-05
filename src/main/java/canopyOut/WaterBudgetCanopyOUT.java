@@ -18,7 +18,8 @@ import rungekutta.RungeKutta;;
  * Inputs are: the rain and the potential evapotranspiration Outputs are: the
  * storage and the throughfall.
  * 
- * @author Marialaura Bancheri, Riccardo Busti, Giuseppe Formetta, Daniele Andreis
+ * @author Marialaura Bancheri, Riccardo Busti, Giuseppe Formetta, Daniele
+ *         Andreis
  * 
  */
 
@@ -46,6 +47,10 @@ public class WaterBudgetCanopyOUT {
 
 	@Description("Time step")
 	@In
+	@Deprecated
+	/**
+	 * only for back-compatibility
+	 */
 	public double tTimestep;
 
 	@Description("Partitioning coefficient free throughfall")
@@ -54,11 +59,9 @@ public class WaterBudgetCanopyOUT {
 
 	@Description("RK iterations")
 	@In
-	public double RKiter = 100;
+	@Deprecated
 
-	// @Description("ODE solver model:dp853, Eulero ")
-	// @In
-	// public String solver_model;
+	public double RKiter = 100;
 
 	@Description("The HashMap with the Actual input of the layer ")
 	@Out
@@ -84,12 +87,9 @@ public class WaterBudgetCanopyOUT {
 	@Out
 	public HashMap<Integer, double[]> outHMError = new HashMap<Integer, double[]>();
 
-	int step;
-	double rain;
-	double CI;
-	double ETp;
-	double s_CanopyMax;
-	RungeKutta rk = null;
+	private int step;
+	private double CI;
+	private RungeKutta rk = null;
 
 	/**
 	 * Process: reading of the data, computation of the storage and outflows
@@ -98,6 +98,9 @@ public class WaterBudgetCanopyOUT {
 	 */
 	@Execute
 	public void process() throws Exception {
+		double ETp;
+		double s_CanopyMax;
+		double rain;
 
 		// reading the ID of all the stations
 		Set<Entry<Integer, double[]>> entrySet = inHMRain.entrySet();
@@ -120,54 +123,47 @@ public class WaterBudgetCanopyOUT {
 			if (isNovalue(ETp) || ETp < 0)
 				ETp = 0.0;
 
-			if (step == 0) {
-				System.out.println("C--kc:" + kc + "-p:" + p);
-				rk = new CanopyRungeKutta(ETp, s_CanopyMax);
-
-				if (initialConditionS_i != null) {
-					CI = initialConditionS_i.get(ID)[0];
-					if (isNovalue(CI))
-						CI = kc * LAI / 2;
-				} else {
-					CI = kc * LAI / 2;
-				}
-			}
-
 			s_CanopyMax = kc * LAI;
 
+			if (step == 0) {
+				init(ETp, s_CanopyMax, ID, LAI);
+			}
+
 			double actualInput = (1 - p) * rain;
-
-			// solve S at t^n+1
-			double[] out = rk.run(CI,actualInput, 0.01);
-			double waterStorage = out[0];
-			if (waterStorage < 0)
-				waterStorage = 0;
-			double aet = out[1];
-			
-			// update variables at t^n+1
-			double actualOutput = out[2];
-			double throughfall = actualOutput + p * rain;
-			double error = out[3];
-			// export to timeseries
-			storeResult_series(ID, waterStorage, throughfall, aet, actualInput, actualOutput, error);
-
-			// set new IC
-			CI = waterStorage;
-
+			double[] out = rk.run(CI, actualInput, 0.01);
+			storeResultAndUpdate(ID, actualInput, rain, out);
 		}
 		step++;
 	}
 
+	private void init(double ETp, double s_CanopyMax, Integer ID, double LAI) {
+		System.out.println("C--kc:" + kc + "-p:" + p);
+		rk = new CanopyRungeKutta(ETp, s_CanopyMax);
 
+		if (initialConditionS_i != null) {
+			CI = initialConditionS_i.get(ID)[0];
+			if (isNovalue(CI))
+				CI = kc * LAI / 2;
+		} else {
+			CI = kc * LAI / 2;
+		}
+	}
 
-	private void storeResult_series(int ID, double S, double tr, double aet, double in, double out, double err) {
-
-		outHMStorage.put(ID, new double[] { S });
-		outHMThroughfall.put(ID, new double[] { tr });
+	private void storeResultAndUpdate(int ID, double in, double rain, double[] out) {
+		double waterStorage = out[0];
+		if (waterStorage < 0)
+			waterStorage = 0;
+		double aet = out[1];
+		double actualOutput = out[2];
+		double throughfall = actualOutput + p * rain;
+		double error = out[3];
+		CI = waterStorage;
+		outHMStorage.put(ID, new double[] { waterStorage });
+		outHMThroughfall.put(ID, new double[] { throughfall });
 		outHMAET.put(ID, new double[] { aet });
 		outHMActualInput.put(ID, new double[] { in });
-		outHMActualOutput.put(ID, new double[] { out });
-		outHMError.put(ID, new double[] { err });
+		outHMActualOutput.put(ID, new double[] { actualOutput });
+		outHMError.put(ID, new double[] { error });
 
 	}
 
