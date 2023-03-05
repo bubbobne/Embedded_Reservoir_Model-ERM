@@ -5,35 +5,33 @@ import static org.junit.Assert.assertEquals;
 import java.util.HashMap;
 
 import org.hortonmachine.gears.io.timedependent.OmsTimeSeriesIteratorReader;
-import org.hortonmachine.gears.io.timedependent.OmsTimeSeriesIteratorWriter;
 import org.junit.Test;
 
 import simpleBucket.WaterBudget;
-import utils.Constants;
 import utils.TestUtility;
 
 /**
+ * 
+ * Test for runoff module.
  * 
  * @author Giuseppe Formetta, Daniele Andreis
  *
  */
 
-public class TestRunoff {
+public class TestRunoff extends TestUtility{
 
+	/**
+	 * Verify that mass is conserved, for each time step and globally.
+	 * 
+	 * 
+	 * @throws Exception
+	 */
 	@Test
 	public void testMassConservation() throws Exception {
-
-		String startDate = "2015-10-01 00:00";
-		String endDate = "2018-06-01 00:00";
-		int timeStepMinutes = 60;
 		String fId = "ID";
 		String inPathToRec = "resources/input/rz_quick_mm.csv";
-		OmsTimeSeriesIteratorReader DischargeReader = TestUtility.getTimeseriesReader(inPathToRec, fId, startDate,
-				endDate, timeStepMinutes);
-		OmsTimeSeriesIteratorWriter writerDischargeMM = new OmsTimeSeriesIteratorWriter();
-		OmsTimeSeriesIteratorWriter writerDischarge = new OmsTimeSeriesIteratorWriter();
-		OmsTimeSeriesIteratorWriter writerStorage = new OmsTimeSeriesIteratorWriter();
-		Integer ID = 853;
+		OmsTimeSeriesIteratorReader DischargeReader = getTimeseriesReader(inPathToRec, fId, START_DATE,
+				END_DATE, MINUTES_TIME_STEP);
 		WaterBudget waterBudget = new WaterBudget();
 
 		int t = 1;
@@ -50,22 +48,21 @@ public class TestRunoff {
 			DischargeReader.nextRecord();
 			HashMap<Integer, double[]> id2ValueMap = DischargeReader.outData;
 			waterBudget.inHMRechargeValues = id2ValueMap;
-			double inRain = id2ValueMap.get(ID)[0];
+			double inRain = id2ValueMap.get(BASIN_ID)[0];
 			waterBudget.process();
 
 			HashMap<Integer, double[]> outHMStorage = waterBudget.outHMStorage;
-			HashMap<Integer, double[]> outHMDischarge = waterBudget.outHMDischarge;
 			HashMap<Integer, double[]> outHMDischargeMM = waterBudget.outHMDischarge_mm;
 
 			if (t > 1) {
 
-				double sto = outHMStorage.get(ID)[0];
-				double tmpBalance = sto - s - inRain + outHMDischargeMM.get(ID)[0];
-				assertEquals(tmpBalance, 0, Constants.TOLLERANCE);
+				double sto = outHMStorage.get(BASIN_ID)[0];
+				double tmpBalance = sto - s - inRain + outHMDischargeMM.get(BASIN_ID)[0];
+				assertEquals(tmpBalance, 0, TOLLERANCE);
 				balance = balance + Math.abs(tmpBalance);
 			}
-			assertEquals(balance, 0, Constants.TOLLERANCE);
-			s = outHMStorage.get(ID)[0];
+			assertEquals(balance, 0, TOLLERANCE);
+			s = outHMStorage.get(BASIN_ID)[0];
 			t = t + 1;
 		}
 
