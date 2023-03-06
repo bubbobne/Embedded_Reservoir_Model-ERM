@@ -1,21 +1,21 @@
 package rungekutta;
 
-
 /**
+ * Canopy
  * 
  * @author Giuseppe Formetta, Daniele Andreis
  *
  */
 public class CanopyRungeKutta extends RungeKutta {
-	double maxOut1;
-	double maxOut2;
+	private double evapoT;
+	private double storageMax;
 
 	public CanopyRungeKutta(double maxOut, double maxOut2) {
+		this.evapoT = maxOut;
+		this.storageMax = maxOut2;
 
-		this.maxOut1 = maxOut;
-		this.maxOut2 = maxOut2;
+	}		// TODO Auto-generated method stub
 
-	}
 
 	public double[] computeFunction(double storageN, double in) {
 		if (storageN < 0) {
@@ -29,18 +29,17 @@ public class CanopyRungeKutta extends RungeKutta {
 	}
 
 	private double computeOut2(double storageN, double in, double out2) {
-		return Math.max(0, storageN + in - out2 - maxOut1);
+		return Math.max(0, storageN + in - out2 - storageMax);
 
 	}
 
 	// compute AET
-	public double computeOut1(double storageN, double in) {
-		return Math.min(Math.max(0, storageN + in), maxOut1 * Math.min(1, storageN / maxOut1));
+	private double computeOut1(double storageN, double in) {
+		return Math.min(Math.max(0, storageN + in), evapoT * Math.min(1, storageN / storageMax));
 	}
 
 	@Override
-	public int getOutDimension() {
-		// TODO Auto-generated method stub
+	protected int getOutDimension() {
 		return 3;
 	}
 }

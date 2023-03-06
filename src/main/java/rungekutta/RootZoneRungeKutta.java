@@ -3,6 +3,8 @@ package rungekutta;
 import static org.hortonmachine.gears.libs.modules.HMConstants.isNovalue;
 
 /**
+ * Extension for root zone.
+ * 
  * 
  * @author Giuseppe Formetta, Daniele Andreis
  *
@@ -14,17 +16,15 @@ public class RootZoneRungeKutta extends RungeKutta {
 	double coeff;
 	double exponent;
 
-	public RootZoneRungeKutta(double coeff, double exponent,double sRootZoneMax, double pBSoil) {
-
+	public RootZoneRungeKutta(double coeff, double exponent, double sRootZoneMax, double pBSoil) {
 		this.sRootZoneMax = sRootZoneMax;
 		this.pBSoil = pBSoil;
 		this.coeff = coeff;
 		this.exponent = exponent;
-
 	}
 
 	@Override
-	public int getOutDimension() {
+	protected int getOutDimension() {
 		// TODO Auto-generated method stub
 		return 6;
 	}
@@ -43,7 +43,6 @@ public class RootZoneRungeKutta extends RungeKutta {
 		double[] o = actualInputs(Sn, alpha);
 		double actualInputs = o[0];
 		double quick = o[1];
-
 		double aet = computeAET(Sn, actualInputs, etpnet);
 		double recharge = computeR(Sn, actualInputs, aet);
 		double fun = actualInputs - aet - recharge;
@@ -57,7 +56,6 @@ public class RootZoneRungeKutta extends RungeKutta {
 		double exp = 1.0 / (pBSoil + 1.0);
 		double ct_prev = pCmax * (1.0 - Math.pow(coeff1, exp));
 		double UT1 = Math.max((Pval - pCmax + ct_prev), 0.0);
-		// Pval = Pval - UT1;
 		double dummy = Math.min(((ct_prev + Pval - UT1) / pCmax), 1.0);
 		double coeff2 = (1.0 - dummy);
 		double exp2 = (pBSoil + 1.0);
@@ -66,17 +64,16 @@ public class RootZoneRungeKutta extends RungeKutta {
 		double alpha = (UT1 + UT2) / Pval;
 		if (isNovalue(alpha) || alpha > 1)
 			alpha = 1;
-		// if (isNovalue(alpha)) alpha= 1;
 		return alpha;
 	}
 
-	// compute actual inputs
-	public double[] actualInputs(double Sn, double alfa) {
+	// compute actual inputspublic
+	private double[] actualInputs(double Sn, double alfa) {
 		return new double[] { (1 - alfa) * rain, alfa * rain };
 	}
 
 	// compute groundwater recharge
-	public double computeR(double Sn, double in, double et) {
+	private double computeR(double Sn, double in, double et) {
 		double out = coeff * Math.pow(Math.min(1, Sn / sRootZoneMax), exponent);
 		out = Math.min(Sn + in - et, out + Math.max(0, Sn - sRootZoneMax + in - et - out));
 		return out;
@@ -84,7 +81,7 @@ public class RootZoneRungeKutta extends RungeKutta {
 	}
 
 	// compute AET
-	public double computeAET(double Sn, double in, double etpnet) {
+	private double computeAET(double Sn, double in, double etpnet) {
 		return Math.min(Sn + in, etpnet * Math.min(1, 1.33 * Math.min(1, Sn / sRootZoneMax)));
 	}
 

@@ -1,17 +1,31 @@
 package rungekutta;
+
 /**
+ * 
+ * 
+ * Runge Kutta with adaptive step
+ * 
+ * 
+ * from:
+ * https://www.glowscript.org/#/user/wlane/folder/Runge-Kutta/program/Runge-Kutta-Adaptive-Step
+ * 
  * 
  * @author Giuseppe Formetta, Daniele Andreis
  *
  */
 public abstract class RungeKutta {
+	// the increments of the step.
 	private final static double[] oneStepCoefficent = new double[] { 0.5, 0.5, 1 };
 	private final static double[] halfStepCoefficent = new double[] { 0.25, 0.25, 0.5 };
 	private final static double[] doubleStepCoefficent = new double[] { 1.0, 1.0, 2.0 };
 
+	
+	// control value
 	double dtMin = 0.001;
 	double dtMax = 0.1;
+	// relative value!!!
 	double dSMax = 0.1;
+	// relative value!!!
 	double dSMin = 0.01;
 	double dSToll = 0.01;
 	double[] output;
@@ -20,12 +34,11 @@ public abstract class RungeKutta {
 	}
 
 	// RK4
-	public double[] run(double storageStart,double in,double dt) {
+	public double[] run(double storageStart, double in, double dt) {
 		double t = 0;
 		output = new double[getOutDimension() + 1];
-        //System.out.println("storage:"+storageStart+" in "+in);
 		output[0] = storageStart;
-	    dSToll = 0.001 * storageStart;
+		dSToll = 0.01 * storageStart;
 		while (t < 1.0) {
 			double[] k1 = computeFunction(output[0], in);
 			double[] oneStepValue = this.computeValue(output[0], dt, k1, oneStepCoefficent, in);
@@ -41,9 +54,9 @@ public abstract class RungeKutta {
 			double halfStepSlope = halfStepValue[0];
 			if (Math.abs(dt * oneStepSlope) > dSToll
 					&& Math.abs(oneStepSlope - halfStepSlope) / Math.abs(oneStepSlope) > dSMax) {
-				updateOutput(dt/2, in, halfStepValue);
-				t = t + dt/2;
-				dt = checkDt(t, dt/2);
+				updateOutput(dt / 2, in, halfStepValue);
+				t = t + dt / 2;
+				dt = checkDt(t, dt / 2);
 				continue;
 			}
 			double[] doubleStepValue = this.computeValue(output[0], dt, k1, doubleStepCoefficent, in);
@@ -59,14 +72,14 @@ public abstract class RungeKutta {
 			}
 			t = t + dt;
 			dt = checkDt(t, dt);
-			
 
 		}
 		return output;
 
 	}
 
-	public double checkDt(double t, double dt) {
+	
+	private double checkDt(double t, double dt) {
 		if (t + dt > 1.0) {
 			return 1.0 - t;
 		}
@@ -98,8 +111,7 @@ public abstract class RungeKutta {
 		return result;
 	}
 
-	public abstract double[] computeFunction(double Sn, double in);
+	protected abstract double[] computeFunction(double storage, double in);
 
-
-	public abstract int getOutDimension();
+	protected abstract int getOutDimension();
 }

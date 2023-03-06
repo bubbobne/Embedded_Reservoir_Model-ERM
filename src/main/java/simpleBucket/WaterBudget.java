@@ -111,7 +111,7 @@ public class WaterBudget {
 
 			double[] output = rk.run(CI, recharge, 0.01);
 
-			storeResult_series(ID, output);
+			storeResultAndUpdate(ID, output);
 
 		}
 		step++;
@@ -130,7 +130,7 @@ public class WaterBudget {
 		}
 	}
 
-	private void storeResult_series(int ID, double[] output) {
+	private void storeResultAndUpdate(int ID, double[] output) {
 		double waterStorage = output[0];
 		if (waterStorage < 0)
 			waterStorage = 0;
