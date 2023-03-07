@@ -13,63 +13,28 @@ package rungekutta;
  * @author Giuseppe Formetta, Daniele Andreis
  *
  */
-public abstract class RungeKutta {
+public abstract class RungeKutta4 {
 	// the increments of the step.
 	private final static double[] oneStepCoefficent = new double[] { 0.5, 0.5, 1 };
-	private final static double[] halfStepCoefficent = new double[] { 0.25, 0.25, 0.5 };
-	private final static double[] doubleStepCoefficent = new double[] { 1.0, 1.0, 2.0 };
-
-	
-	// control value
 	double dtMin = 0.001;
-	double dtMax = 0.1;
-	// relative value!!!
-	double dSMax = 0.1;
-	// relative value!!!
-	double dSMin = 0.01;
-	double dSToll = 0.01;
 	double[] output;
+	protected double deltaT;
+	
 
-	protected RungeKutta() {
-	}
 
 	// RK4
-	public double[] run(double storageStart, double in, double dt) {
+	public double[] run(double storageStart, double in, double rkiter) {
+		double dt = 1.0 / rkiter;
+		if (dt < dtMin) {
+			dt = dtMin;
+		}
 		double t = 0;
 		output = new double[getOutDimension() + 1];
 		output[0] = storageStart;
-		dSToll = 0.01 * storageStart;
 		while (t < 1.0) {
 			double[] k1 = computeFunction(output[0], in);
 			double[] oneStepValue = this.computeValue(output[0], dt, k1, oneStepCoefficent, in);
-			double oneStepSlope = oneStepValue[0];
-
-			if (Math.abs(dt * oneStepSlope) < dSToll) {
-				updateOutput(dt, in, oneStepValue);
-				t = t + dt;
-				dt = checkDt(t, dtMin);
-				continue;
-			}
-			double[] halfStepValue = this.computeValue(output[0], dt, k1, halfStepCoefficent, in);
-			double halfStepSlope = halfStepValue[0];
-			if (Math.abs(dt * oneStepSlope) > dSToll
-					&& Math.abs(oneStepSlope - halfStepSlope) / Math.abs(oneStepSlope) > dSMax) {
-				updateOutput(dt / 2, in, halfStepValue);
-				t = t + dt / 2;
-				dt = checkDt(t, dt / 2);
-				continue;
-			}
-			double[] doubleStepValue = this.computeValue(output[0], dt, k1, doubleStepCoefficent, in);
-			double Sn1DoubleStep = doubleStepValue[0];
-
-			if (dt * 2 < dtMax && t + 2.0 * dt <= 1.0 && Math.abs(dt * oneStepSlope) > dSToll
-					&& Math.abs(oneStepSlope - Sn1DoubleStep) / Math.abs(oneStepSlope) < dSMin) {
-				dt = dt * 2;
-				updateOutput(dt, in, doubleStepValue);
-
-			} else {
-				updateOutput(dt, in, oneStepValue);
-			}
+			updateOutput(dt, in, oneStepValue);
 			t = t + dt;
 			dt = checkDt(t, dt);
 
@@ -78,7 +43,6 @@ public abstract class RungeKutta {
 
 	}
 
-	
 	private double checkDt(double t, double dt) {
 		if (t + dt > 1.0) {
 			return 1.0 - t;
@@ -96,7 +60,7 @@ public abstract class RungeKutta {
 			output[i] = output[i] + tmpValue;
 			totalOutput = +tmpValue;
 		}
-		output[i] = storageStart - output[0] + dt * in - totalOutput;
+		output[i] = output[i] + Math.abs(storageStart - output[0] + dt * in - totalOutput);
 	}
 
 	private double[] computeValue(double storagePreviousStep, double dt, double[] k1, double[] params, double in) {

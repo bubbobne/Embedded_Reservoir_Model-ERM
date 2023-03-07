@@ -1,4 +1,4 @@
-package rungekutta;
+package rungekutta.adaptive;
 
 /**
  * Canopy
@@ -6,7 +6,7 @@ package rungekutta;
  * @author Giuseppe Formetta, Daniele Andreis
  *
  */
-public class CanopyRungeKutta extends RungeKutta {
+public class CanopyRungeKutta extends AdaptiveRungeKutta4 {
 	private double evapoT;
 	private double storageMax;
 

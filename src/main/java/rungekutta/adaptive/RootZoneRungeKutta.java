@@ -1,4 +1,4 @@
-package rungekutta;
+package rungekutta.adaptive;
 
 import static org.hortonmachine.gears.libs.modules.HMConstants.isNovalue;
 
@@ -9,7 +9,7 @@ import static org.hortonmachine.gears.libs.modules.HMConstants.isNovalue;
  * @author Giuseppe Formetta, Daniele Andreis
  *
  */
-public class RootZoneRungeKutta extends RungeKutta {
+public class RootZoneRungeKutta extends AdaptiveRungeKutta4 {
 	double sRootZoneMax;
 	double pBSoil;
 	double rain;
@@ -29,9 +29,9 @@ public class RootZoneRungeKutta extends RungeKutta {
 		return 6;
 	}
 
-	public double[] run(double storageStart, double in, double out, double dt) {
+	public double[] run(double storageStart, double in, double out, double rkiter) {
 		this.rain = in;
-		return super.run(storageStart, out, dt);
+		return super.run(storageStart, out, rkiter);
 	}
 
 	// compute dS/dt

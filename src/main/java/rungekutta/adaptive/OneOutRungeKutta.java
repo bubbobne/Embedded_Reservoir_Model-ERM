@@ -1,4 +1,4 @@
-package rungekutta;
+package rungekutta.adaptive;
 
 /**
  * 
@@ -7,7 +7,7 @@ package rungekutta;
  * @author Giuseppe Formetta, Daniele Andreis
  *
  */
-public class OneOutRungeKutta extends RungeKutta {
+public class OneOutRungeKutta extends AdaptiveRungeKutta4 {
 	private double d;
 	private double c;
 	private double maxOut;

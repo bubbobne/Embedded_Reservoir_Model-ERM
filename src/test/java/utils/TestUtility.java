@@ -7,7 +7,7 @@ import org.hortonmachine.gears.io.timedependent.OmsTimeSeriesIteratorReader;
 public class TestUtility {
 
 	
-	protected final static double TOLLERANCE = Math.exp(-4);
+	public final static double TOLLERANCE = Math.exp(-9);
 	protected final static String START_DATE = "2015-10-01 00:00";
 	protected final static String END_DATE = "2018-09-30 00:00";
 	protected final static String FID = "ID";

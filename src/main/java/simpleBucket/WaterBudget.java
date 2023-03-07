@@ -17,9 +17,9 @@ import oms3.annotations.Execute;
 import oms3.annotations.In;
 import oms3.annotations.Out;
 import oms3.annotations.Unit;
-import rungekutta.OneOutRungeKutta;
-import rungekutta.RungeKutta;
 import rungekutta.Utils;
+import rungekutta.adaptive.AdaptiveRungeKutta4;
+import rungekutta.adaptive.OneOutRungeKutta;
 
 /**
  * The Class WaterBudget solves the water budget equation for the runoff layer.
@@ -85,7 +85,7 @@ public class WaterBudget {
 	int step;
 	double recharge;
 	double CI;
-	RungeKutta rk = null;
+	AdaptiveRungeKutta4 rk = null;
 	double m3s = 0;
 
 	/**
@@ -109,7 +109,7 @@ public class WaterBudget {
 				init(ID);
 			}
 
-			double[] output = rk.run(CI, recharge, 0.01);
+			double[] output = rk.run(CI, recharge, RKiter);
 
 			storeResultAndUpdate(ID, output);
 

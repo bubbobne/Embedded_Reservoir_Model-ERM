@@ -1,8 +1,12 @@
 package it.geoframe.blogspot.runkekutta;
 
+import static org.junit.Assert.assertEquals;
+
 import org.junit.Test;
 
-import rungekutta.RungeKutta;
+import rungekutta.RungeKutta4;
+import rungekutta.adaptive.AdaptiveRungeKutta4;
+import utils.TestUtility;
 
 /**
  * Check the method with exact solution from:
@@ -19,19 +23,49 @@ import rungekutta.RungeKutta;
  */
 
 public class TestRK {
+
+	public static double DELTA_T = 10;
+
+	private final static double[] solution = new double[] { 1.2543261182170111, 2.18017645278028, 2.929554696185594,
+			3.5550666963585438, 4.086236819424352, 4.542381430549469, 4.937227977946122, 5.281055311377312,
+			5.581842148323699, 5.845946403356595, 6.078536194392336, 6.283878204712432, 6.46553882104708,
+			6.626529229735589, 6.769413026236427, 6.8963878967034375, 7.009348852118379, 7.1099380153882645,
+			7.199584398305937, 7.279536088507692, 7.350886587205579, 7.414596573677519, 7.471512047678362,
+			7.522379569640137, 7.567859151004008, 7.608535223812762, 7.644926026793103, 7.677491675730076,
+			7.706641132864849 };
+
 	@Test
 	public void RK() {
+
 		RoutingRk rk = new RoutingRk();
 		double CI = 0;
-
-		for (int t = 0; t <= 800; t = t + 10) {
-			double[] output = rk.run(CI, 12.3*10, 0.01);
-			System.out.println(output[0]/rk.area + " "+rk.getExactH(t, 0));
+		int i = 0;
+		for (double t = 10; t < 300; t = t + DELTA_T) {
+			double[] output = rk.run(CI, 12.3 * DELTA_T, 100);
+			assertEquals(output[0] - CI - 12.3 * DELTA_T + output[1], 0, TestUtility.TOLLERANCE);
+			assertEquals(output[0] / rk.area, solution[i], 0.0001);
+			// System.out.print(output[0] / rk.area);
 			CI = output[0];
+			i = i + 1;
 		}
+
+		double h0 = CI / rk.area;
+		for (double t = 310; t < 500; t = t + DELTA_T) {
+			double[] output = rk.run(CI, 0, 100);
+			assertEquals(output[0] - CI + output[1], 0, TestUtility.TOLLERANCE);
+			double h = rk.getExactH(t, h0);
+			System.out.println(t);
+			System.out.println(h);
+
+			assertEquals(output[0] / rk.area, h, 0.001);
+			CI = output[0];
+			i = i + 1;
+
+		}
+
 	}
 
-	public class RoutingRk extends RungeKutta {
+	public class RoutingRk extends AdaptiveRungeKutta4 {
 
 		public double area = 71;
 		double cc = 0.78;
@@ -39,25 +73,26 @@ public class TestRK {
 
 		@Override
 		protected double[] computeFunction(double storage, double in) {
-			// TODO Auto-generated method stub
-
 			if (storage < 0) {
 				storage = 0;
 			}
-
 			double out1 = computeOut(storage, in);
 			return new double[] { in - out1, out1 };
 		}
 
+		public double getTime(double h0, double h) {
+			h0 = Math.sqrt(h0);
+			h = Math.sqrt(h);
+
+			return 2 * area / cd * ((h0 - h) + 1 / cd * Math.log(Math.abs((1 - cd * h0) / (1 - cd * h))));
+		}
+
 		private double computeOut(double storage, double in) {
-			double out = cd * Math.sqrt(storage / area);
-			out = Math.min(storage + in, out);
-			return out;
+			return Math.min(storage + in, cd * Math.sqrt(storage / area)) * DELTA_T;
 		}
 
 		@Override
 		protected int getOutDimension() {
-			// TODO Auto-generated method stub
 			return 2;
 		}
 
@@ -69,7 +104,16 @@ public class TestRK {
 		 * @return
 		 */
 		public double getExactH(double t, double h0) {
-			return (Math.sqrt(h0) - cd * t / (1 * area));
+			if (t >= 300) {
+				double h = (Math.sqrt(h0) - cd * (t - 300) / (2 * area));
+				if (h > 0) {
+					return h * h;
+				} else {
+					return 0;
+				}
+			} else {
+				return h0;
+			}
 		}
 
 		/**
@@ -79,8 +123,12 @@ public class TestRK {
 		 * @param h0
 		 * @return
 		 */
-		public double getExactQ(double h) {
-			return cd * Math.sqrt(h);
+		public double getExactQ(double t, double h) {
+			if (t > 300) {
+				return cd * Math.sqrt(h);
+			} else {
+				return 0;
+			}
 		}
 
 	}

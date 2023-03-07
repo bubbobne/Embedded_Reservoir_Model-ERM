@@ -29,8 +29,8 @@ import oms3.annotations.Description;
 import oms3.annotations.Execute;
 import oms3.annotations.In;
 import oms3.annotations.Out;
-import rungekutta.OneOutRungeKutta;
-import rungekutta.RungeKutta;
+import rungekutta.adaptive.AdaptiveRungeKutta4;
+import rungekutta.adaptive.OneOutRungeKutta;
 import utils.Utility;
 
 /**
@@ -95,7 +95,7 @@ public class WaterBudgetGround {
 
 	int step;
 	double CI;
-	RungeKutta rk = null;
+	AdaptiveRungeKutta4 rk = null;
 	double m3s = 0;
 
 	/**
@@ -124,7 +124,7 @@ public class WaterBudgetGround {
 			}
 
 			// solve S at t^n+1
-			double[] out = rk.run(CI, recharge, 0.01);
+			double[] out = rk.run(CI, recharge, RKiter);
 
 			// save results
 			storeResultAndUpdate(ID, out);

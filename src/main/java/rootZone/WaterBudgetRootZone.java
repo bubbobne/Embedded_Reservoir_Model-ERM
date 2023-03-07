@@ -29,7 +29,7 @@ import oms3.annotations.Description;
 import oms3.annotations.Execute;
 import oms3.annotations.In;
 import oms3.annotations.Out;
-import rungekutta.RootZoneRungeKutta;
+import rungekutta.adaptive.RootZoneRungeKutta;
 import utils.Utility;;
 
 /**
@@ -181,7 +181,7 @@ public class WaterBudgetRootZone {
 
 			ETpNet = ETp - Ewc;
 
-			double[] out = rk.run(CI, rain, ETpNet, 0.001);
+			double[] out = rk.run(CI, rain, ETpNet, RKiter);
 
 			storeResultAndUpdate(ID, out);
 

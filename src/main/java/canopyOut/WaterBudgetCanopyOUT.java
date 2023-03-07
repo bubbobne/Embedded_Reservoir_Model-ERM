@@ -10,8 +10,8 @@ import oms3.annotations.Description;
 import oms3.annotations.Execute;
 import oms3.annotations.In;
 import oms3.annotations.Out;
-import rungekutta.CanopyRungeKutta;
-import rungekutta.RungeKutta;;
+import rungekutta.adaptive.AdaptiveRungeKutta4;
+import rungekutta.adaptive.CanopyRungeKutta;;
 
 /**
  * The component solves the budget for the outer part of the canopy layer.
@@ -89,7 +89,7 @@ public class WaterBudgetCanopyOUT {
 
 	private int step;
 	private double CI;
-	private RungeKutta rk = null;
+	private AdaptiveRungeKutta4 rk = null;
 
 	/**
 	 * Process: reading of the data, computation of the storage and outflows
@@ -130,7 +130,7 @@ public class WaterBudgetCanopyOUT {
 			}
 
 			double actualInput = (1 - p) * rain;
-			double[] out = rk.run(CI, actualInput, 0.01);
+			double[] out = rk.run(CI, actualInput, RKiter);
 			storeResultAndUpdate(ID, actualInput, rain, out);
 		}
 		step++;
