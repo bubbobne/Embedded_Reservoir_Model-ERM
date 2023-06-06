@@ -118,7 +118,7 @@ public class WaterBudget {
 	}
 
 	private void init(Integer ID) {
-		System.out.println("RU--c:" + c + "-d:" + d + "-s_RunoffMax:" + s_RunoffMax);
+//		System.out.println("RU--c:" + c + "-d:" + d + "-s_RunoffMax:" + s_RunoffMax);
 		rk = new OneOutRungeKutta(c, d, s_RunoffMax);
 		m3s = A * Math.pow(10, 3) / (tTimestep * 60);
 		if (initialConditionS_i != null) {

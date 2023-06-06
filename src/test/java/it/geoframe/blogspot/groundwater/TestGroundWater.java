@@ -7,7 +7,7 @@ import java.util.HashMap;
 import org.hortonmachine.gears.io.timedependent.OmsTimeSeriesIteratorReader;
 import org.junit.Test;
 
-import groundWater.WaterBudgetGround;
+import groundWater.WaterBudgetGroundWater;
 import utils.TestUtility;
 
 /**
@@ -32,7 +32,7 @@ public class TestGroundWater extends TestUtility {
 		OmsTimeSeriesIteratorReader rechargeReader = getTimeseriesReader(inPathToRecharge, FID, START_DATE, END_DATE,
 				MINUTES_TIME_STEP);
 
-		WaterBudgetGround waterBudget = new WaterBudgetGround();
+		WaterBudgetGroundWater waterBudget = new WaterBudgetGroundWater();
 
 		int t = 1;
 		double s = 0;

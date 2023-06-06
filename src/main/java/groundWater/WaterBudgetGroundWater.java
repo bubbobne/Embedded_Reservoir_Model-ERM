@@ -41,7 +41,7 @@ import utils.Utility;
  * @author Marialaura Bancheri, Riccardo Busti, Giuseppe Formetta, Daniele
  *         Andreis
  */
-public class WaterBudgetGround {
+public class WaterBudgetGroundWater {
 
 	@Description("Input recharge Hashmap")
 	@In
@@ -135,15 +135,15 @@ public class WaterBudgetGround {
 	}
 
 	private void init(Integer ID) {
-		System.out.println("GW--e:" + e + "-f:" + f + "-s_GroundWaterMax:" + s_GroundWaterMax);
+//		System.out.println("GW--e:" + e + "-f:" + f + "-s_GroundWaterMax:" + s_GroundWaterMax);
 		rk = new OneOutRungeKutta(e, f, s_GroundWaterMax);
 		m3s = Utility.getCOnversionToM3SCoeff(A, tTimestep);
 		if (initialConditionS_i != null) {
 			CI = initialConditionS_i.get(ID)[0];
 			if (isNovalue(CI))
-				CI = 0.01 * s_GroundWaterMax;
+				CI = 0.3 * s_GroundWaterMax;
 		} else {
-			CI = 0.01 * s_GroundWaterMax;
+			CI = 0.3 * s_GroundWaterMax;
 		}
 	}
 

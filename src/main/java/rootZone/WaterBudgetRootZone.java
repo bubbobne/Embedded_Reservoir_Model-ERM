@@ -190,7 +190,7 @@ public class WaterBudgetRootZone {
 	}
 
 	private void init(Integer ID) {
-		System.out.println("RZ--grz:" + g + "-hrz:" + h + "-Smax:" + s_RootZoneMax + "-pB_soil:" + pB_soil);
+//		System.out.println("RZ--grz:" + g + "-hrz:" + h + "-Smax:" + s_RootZoneMax + "-pB_soil:" + pB_soil);
 		rk = new RootZoneRungeKutta(g, h, s_RootZoneMax, pB_soil);
 		m3s = Utility.getCOnversionToM3SCoeff(A, tTimestep);
 

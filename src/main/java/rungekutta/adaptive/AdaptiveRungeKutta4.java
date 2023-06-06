@@ -22,7 +22,7 @@ public abstract class AdaptiveRungeKutta4 {
 	private final static double[] doubleStepCoefficent = new double[] { 1.0, 1.0, 2.0 };
 
 	// control value
-	double dtMin = 0.001;
+	double DT_MIN = 0.001;
 	double dtMax = 0.1;
 	// relative value!!!
 	double dSMax = 0.1;
@@ -36,7 +36,8 @@ public abstract class AdaptiveRungeKutta4 {
 
 	// RK4
 	public double[] run(double storageStart, double in, double rkiter) {
-		double dt = 1.0 / rkiter;
+		double dt = Math.min(1.0 / rkiter,1.0);
+		double dtMin =Math.max(DT_MIN,dt);
 		double t = 0;
 		output = new double[getOutDimension() + 1];
 		output[0] = storageStart;

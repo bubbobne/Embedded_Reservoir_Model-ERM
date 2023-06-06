@@ -137,7 +137,7 @@ public class WaterBudgetCanopyOUT {
 	}
 
 	private void init(double ETp, double s_CanopyMax, Integer ID, double LAI) {
-		System.out.println("C--kc:" + kc + "-p:" + p);
+//		System.out.println("C--kc:" + kc + "-p:" + p);
 		rk = new CanopyRungeKutta(ETp, s_CanopyMax);
 
 		if (initialConditionS_i != null) {
