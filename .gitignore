@@ -1,7 +1,21 @@
-/bin/
 .gradle/
 .idea/
+ # Eclipse
 .classpath
+.editorconfig
+.factorypath
+.gitattributes
 .project
 .settings/
-build/
+bin/
+
+
+
+# Mac
+.DS_Store
+
+
+# maven project related ignore files and directories
+.mvn/
+target/
+
