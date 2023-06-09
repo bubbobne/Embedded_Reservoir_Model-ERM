@@ -19,33 +19,36 @@
 
 package simpleBucket;
 
-import static org.jgrasstools.gears.libs.modules.JGTConstants.isNovalue;
+import static org.hortonmachine.gears.libs.modules.HMConstants.isNovalue;
 
 import java.util.HashMap;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
+
+import javax.swing.text.Utilities;
+
+import org.apache.commons.math3.ode.FirstOrderDifferentialEquations;
+import org.apache.commons.math3.ode.FirstOrderIntegrator;
+import org.apache.commons.math3.ode.nonstiff.DormandPrince853Integrator;
 
 import oms3.annotations.Description;
 import oms3.annotations.Execute;
 import oms3.annotations.In;
 import oms3.annotations.Out;
-
-import org.geotools.feature.SchemaException;
-
-import java.io.IOException;
-
-import org.apache.commons.math3.ode.*;
-
+import oms3.annotations.Unit;
+import rungekutta.Utils;
+import rungekutta.adaptive.AdaptiveRungeKutta4;
+import rungekutta.adaptive.OneOutRungeKutta;
 
 /**
- * The Class WaterBudget solves the water budget equation for the groudwater layer.
- * The input s the recharge from the root zone and the output is the discharge, 
+ * The Class WaterBudget solves the water budget equation for the runoff layer.
+ * The input s the recharge from the root zone and the output is the discharge,
  * modeled with a non linear reservoir model.
  * 
- * @author Marialaura Bancheri
+ * @author Marialaura Bancheri, Riccardo Busti, Giuseppe Formetta, Daniele
+ *         Andreis
  */
-public class WaterBudget{
-
+public class WaterBudget {
 
 	@Description("Input recharge Hashmap")
 	@In
@@ -53,22 +56,17 @@ public class WaterBudget{
 
 	@Description("Input CI Hashmap")
 	@In
-	public HashMap<Integer, double[]>initialConditionS_i;
-
+	public HashMap<Integer, double[]> initialConditionS_i;
 
 	@Description("Time Step simulation")
+	@Unit("minutes")
 	@In
-	public int timeStep;
-	
-	@Description("ERM or sERM")
-	@In
-	public String model;
-
+	@Deprecated
+	public double tTimestep;
 
 	@Description("Coefficient of the non-linear Reservoir model ")
 	@In
-	public double c ;
-
+	public double c;
 
 	@Description("Exponent of non-linear reservoir")
 	@In
@@ -78,158 +76,91 @@ public class WaterBudget{
 	@In
 	public double A;
 
-	@Description("Smax")
+	@Description("s_RunoffMax")
 	@In
-	public double s_RunoffMax=10;
+	public double s_RunoffMax;
 
-
-	@Description("ODE solver model: dp853, Eulero ")
+	@Description("RK iterations")
 	@In
-	public String solver_model;
+	@Deprecated
+	public double RKiter = 100;
 
 	@Description("The output HashMap with the Water Storage")
 	@Out
-	public HashMap<Integer, double[]> outHMStorage= new HashMap<Integer, double[]>() ;
+	public HashMap<Integer, double[]> outHMStorage = new HashMap<Integer, double[]>();
 
 	@Description("The output HashMap with the discharge")
 	@Out
-	public HashMap<Integer, double[]> outHMDischarge= new HashMap<Integer, double[]>() ;
+	public HashMap<Integer, double[]> outHMDischarge = new HashMap<Integer, double[]>();
 
 	@Description("The output HashMap with the discharge in mm")
 	@Out
-	public HashMap<Integer, double[]> outHMDischarge_mm= new HashMap<Integer, double[]>() ;
+	public HashMap<Integer, double[]> outHMDischarge_mm = new HashMap<Integer, double[]>();
+
+	@Description("The output HashMap with error")
+	@Out
+	public HashMap<Integer, double[]> outHMError = new HashMap<Integer, double[]>();
 
 	int step;
-
+	double recharge;
 	double CI;
-
+	AdaptiveRungeKutta4 rk = null;
+	double m3s = 0;
 
 	/**
-	 * Process: reading of the data, computation of the
-	 * storage and outflows
+	 * Process: reading of the data, computation of the storage and outflows
 	 *
 	 * @throws Exception the exception
 	 */
 	@Execute
 	public void process() throws Exception {
-		//checkNull(inHMRechargeValues);
 
-
-		// reading the ID of all the stations 
 		Set<Entry<Integer, double[]>> entrySet = inHMRechargeValues.entrySet();
 
-
-
-		double tau_ro=(c*Math.pow(A, 0.5));
-		
-		if(model=="ERM"){
-			tau_ro=1/c;
-		}
-
-		// iterate over the station
-		for( Entry<Integer, double[]> entry : entrySet ) {
+		for (Entry<Integer, double[]> entry : entrySet) {
 			Integer ID = entry.getKey();
 
-			if(step==0){
-				System.out.println("RO--c:"+c+"-d:"+d+"-s_RunoffMax:"+s_RunoffMax);
-
-				if(initialConditionS_i!=null){
-					CI=initialConditionS_i.get(ID)[0];
-					if (isNovalue(CI)) CI= 0;					
-				}else{
-					CI=0;
-				}
+			/** Input data reading */
+			recharge = inHMRechargeValues.get(ID)[0];
+			if (isNovalue(recharge))
+				recharge = 0;
+			if (step == 0) {
+				init(ID);
 			}
 
-			/**Input data reading*/
-			double recharge = inHMRechargeValues.get(ID)[0];
-			if (isNovalue(recharge)) recharge= 0;
-			//if(step==0&recharge==0)recharge= 1;
+			double[] output = rk.run(CI, recharge, RKiter);
 
-
-			double waterStorage=computeS(recharge,CI,tau_ro);
-			double discharge_mm=computeQ(waterStorage,tau_ro);
-
-			double discharge=discharge_mm/1000*A*Math.pow(10, 6)/(60*timeStep);		
-
-			/** Save the result in  hashmaps for each station*/
-			storeResult_series(ID,waterStorage,discharge,discharge_mm);
-
-			CI=waterStorage;
+			storeResultAndUpdate(ID, output);
 
 		}
-
-
 		step++;
-
 	}
 
-	/**
-	 * Compute the water storage
-	 *
-	 * @param totalInputFluxes: input total input fluxes
-	 * @param the initial condition of the storage
-	 * @return the water storage, according to the model and the layer
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 */
-	public double computeS(double recharge, double S_i, double tau_ro) throws IOException {
-
-
-		/** Creation of the differential equation*/
-		FirstOrderDifferentialEquations ode=new waterBudgetODE(recharge,1/tau_ro,d,s_RunoffMax);			
-
-		/** Boundaries conditions*/
-		double[] y = new double[] { S_i, s_RunoffMax };
-
-		/** Choice of the ODE solver */	
-		SolverODE solver;
-		solver=SimpleIntegratorFactory.createSolver(solver_model, 1, ode, y);
-
-		/** result of the resolution of the ODE*/
-		S_i=solver.integrateValues();
-
-		/** Check of the Storage values: they cannot be negative*/
-		if (S_i<0) S_i=0;
-
-		//if(S_i<1)System.out.println("ro"+c+"-"+d+"-"+s_RunoffMax);
-
-
-		return S_i;
+	private void init(Integer ID) {
+//		System.out.println("RU--c:" + c + "-d:" + d + "-s_RunoffMax:" + s_RunoffMax);
+		rk = new OneOutRungeKutta(c, d, s_RunoffMax);
+		m3s = A * Math.pow(10, 3) / (tTimestep * 60);
+		if (initialConditionS_i != null) {
+			CI = initialConditionS_i.get(ID)[0];
+			if (isNovalue(CI))
+				CI = 0.5 * s_RunoffMax;
+		} else {
+			CI = 0.5 * s_RunoffMax;
+		}
 	}
 
-
-	/**
-	 *
-	 * @param S_i: the actual storage 
-	 * @return the double value of the simulated discharge
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 */
-	public double computeQ(double S_i, double tau_ro) throws IOException {
-		double Q=1/tau_ro*Math.pow(S_i/s_RunoffMax,d);
-		return Q;
-	}
-
-
-
-
-	/**
-	 * Store of the results in hashmaps 
-	 *
-	 * @param waterStorage is the water storage
-	 * @param discharge is the discharge
-	 * @param discharge is the discharge in mm
-	 * @throws SchemaException the schema exception
-	 */
-
-	private void storeResult_series(int ID, double waterStorage,double discharge, double discharge_mm)
-			throws SchemaException {
-
-		outHMStorage.put(ID, new double[]{waterStorage});
-		outHMDischarge.put(ID, new double[]{discharge});
-		outHMDischarge_mm.put(ID, new double[]{discharge_mm});
-
+	private void storeResultAndUpdate(int ID, double[] output) {
+		double waterStorage = output[0];
+		if (waterStorage < 0)
+			waterStorage = 0;
+		double error = output[2];
+		double runoff_mm = output[1];
+		double runoff = runoff_mm * m3s;
+		CI = waterStorage;
+		outHMStorage.put(ID, new double[] { waterStorage });
+		outHMDischarge.put(ID, new double[] { runoff });
+		outHMDischarge_mm.put(ID, new double[] { runoff_mm });
+		outHMError.put(ID, new double[] { error });
 
 	}
-
-
 }

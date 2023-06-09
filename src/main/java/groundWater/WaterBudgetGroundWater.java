@@ -19,33 +19,29 @@
 
 package groundWater;
 
-import static org.jgrasstools.gears.libs.modules.JGTConstants.isNovalue;
+import static org.hortonmachine.gears.libs.modules.HMConstants.isNovalue;
 
 import java.util.HashMap;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import oms3.annotations.Description;
 import oms3.annotations.Execute;
 import oms3.annotations.In;
 import oms3.annotations.Out;
-
-import org.geotools.feature.SchemaException;
-
-import java.io.IOException;
-
-import org.apache.commons.math3.ode.*;
-
+import rungekutta.adaptive.AdaptiveRungeKutta4;
+import rungekutta.adaptive.OneOutRungeKutta;
+import utils.Utility;
 
 /**
- * The Class WaterBudget solves the water budget equation for the groudwater layer.
- * The input s the recharge from the root zone and the output is the discharge, 
- * modeled with a non linear reservoir model.
+ * The Class WaterBudget solves the water budget equation for the groudwater
+ * layer. The input s the recharge from the root zone and the output is the
+ * discharge, modeled with a non linear reservoir model.
  * 
- * @author Marialaura Bancheri
+ * @author Marialaura Bancheri, Riccardo Busti, Giuseppe Formetta, Daniele
+ *         Andreis
  */
-public class WaterBudgetGroundWater{
-
+public class WaterBudgetGroundWater {
 
 	@Description("Input recharge Hashmap")
 	@In
@@ -53,18 +49,16 @@ public class WaterBudgetGroundWater{
 
 	@Description("Input CI Hashmap")
 	@In
-	public HashMap<Integer, double[]>initialConditionS_i;
-
+	public HashMap<Integer, double[]> initialConditionS_i;
 
 	@Description("Time Step simulation")
 	@In
-	public int timeStep;
-
+	@Deprecated
+	public double tTimestep;
 
 	@Description("Coefficient of the non-linear Reservoir model ")
 	@In
-	public double e ;
-
+	public double e;
 
 	@Description("Exponent of non-linear reservoir")
 	@In
@@ -78,146 +72,98 @@ public class WaterBudgetGroundWater{
 	@In
 	public double s_GroundWaterMax;
 
-
-	@Description("ODE solver model: dp853, Eulero ")
+	@Description("RK iterations")
 	@In
-	public String solver_model;
+	@Deprecated
+	public double RKiter = 100;
 
 	@Description("The output HashMap with the Water Storage")
 	@Out
-	public HashMap<Integer, double[]> outHMStorage= new HashMap<Integer, double[]>() ;
+	public HashMap<Integer, double[]> outHMStorage = new HashMap<Integer, double[]>();
 
 	@Description("The output HashMap with the discharge")
 	@Out
-	public HashMap<Integer, double[]> outHMDischarge= new HashMap<Integer, double[]>() ;
+	public HashMap<Integer, double[]> outHMDischarge = new HashMap<Integer, double[]>();
 
 	@Description("The output HashMap with the discharge in mm")
 	@Out
-	public HashMap<Integer, double[]> outHMDischarge_mm= new HashMap<Integer, double[]>() ;
+	public HashMap<Integer, double[]> outHMDischarge_mm = new HashMap<Integer, double[]>();
+
+	@Description("The output HashMap with error")
+	@Out
+	public HashMap<Integer, double[]> outHMError = new HashMap<Integer, double[]>();
 
 	int step;
-
 	double CI;
-
+	AdaptiveRungeKutta4 rk = null;
+	double m3s = 0;
 
 	/**
-	 * Process: reading of the data, computation of the
-	 * storage and outflows
+	 * Process: reading of the data, computation of the storage and outflows
 	 *
 	 * @throws Exception the exception
 	 */
 	@Execute
 	public void process() throws Exception {
-		//checkNull(inHMRechargeValues);
 
-
-		// reading the ID of all the stations 
+		// reading the ID of all the stations
 		Set<Entry<Integer, double[]>> entrySet = inHMRechargeValues.entrySet();
-
+		double recharge;
 
 		// iterate over the station
-		for( Entry<Integer, double[]> entry : entrySet ) {
+		for (Entry<Integer, double[]> entry : entrySet) {
 			Integer ID = entry.getKey();
 
-			if(step==0){
-				System.out.println("GW--e:"+e+"-f:"+f+"-s_GroundWaterMax:"+s_GroundWaterMax);
+			/** Input data reading */
+			recharge = inHMRechargeValues.get(ID)[0];
+			if (isNovalue(recharge))
+				recharge = 0;
 
-				if(initialConditionS_i!=null){
-					CI=initialConditionS_i.get(ID)[0];
-					if (isNovalue(CI)) CI= 0.5*s_GroundWaterMax;
-				}else{
-					CI=0.5*s_GroundWaterMax;
-				}
+			if (step == 0) {
+				init(ID);
 			}
 
-			/**Input data reading*/
-			double recharge = inHMRechargeValues.get(ID)[0];
-			if (isNovalue(recharge)) recharge= 0;
-//			if(step==0&recharge==0)recharge= 1;
+			// solve S at t^n+1
+			double[] out = rk.run(CI, recharge, RKiter);
 
+			// save results
+			storeResultAndUpdate(ID, out);
 
-			double waterStorage=computeS(recharge,CI);
-			double discharge_mm=computeQ(waterStorage);
-
-			double discharge=discharge_mm/1000*A*Math.pow(10, 6)/(60*timeStep);		
-
-			/** Save the result in  hashmaps for each station*/
-			storeResult_series(ID,waterStorage,discharge,discharge_mm);
-
-			CI=waterStorage;
 		}
-
-
 		step++;
 
 	}
 
-	/**
-	 * Compute the water storage
-	 *
-	 * @param totalInputFluxes: input total input fluxes
-	 * @param the initial condition of the storage
-	 * @return the water storage, according to the model and the layer
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 */
-	public double computeS(double recharge, double S_i) throws IOException {
-
-
-		/** Creation of the differential equation*/
-		FirstOrderDifferentialEquations ode=new waterBudgetODE(recharge,e,f, s_GroundWaterMax);			
-
-		/** Boundaries conditions*/
-		double[] y = new double[] { S_i, s_GroundWaterMax };
-
-		/** Choice of the ODE solver */	
-		SolverODE solver;
-		solver=SimpleIntegratorFactory.createSolver(solver_model, 1, ode, y);
-
-		/** result of the resolution of the ODE*/
-		S_i=solver.integrateValues();
-
-		/** Check of the Storage values: they cannot be negative*/
-		if (S_i<0) S_i=0;
-
-		//if(S_i<0.01)System.out.println("gw"+a+"-"+b+"-"+s_GroundWaterMax);
-
-
-		return S_i;
+	private void init(Integer ID) {
+//		System.out.println("GW--e:" + e + "-f:" + f + "-s_GroundWaterMax:" + s_GroundWaterMax);
+		rk = new OneOutRungeKutta(e, f, s_GroundWaterMax);
+		m3s = Utility.getCOnversionToM3SCoeff(A, tTimestep);
+		if (initialConditionS_i != null) {
+			CI = initialConditionS_i.get(ID)[0];
+			if (isNovalue(CI))
+				CI = 0.3 * s_GroundWaterMax;
+		} else {
+			CI = 0.3 * s_GroundWaterMax;
+		}
 	}
 
+	private void storeResultAndUpdate(int ID, double[] out) {
+		double waterStorage = out[0];
+		if (waterStorage < 0)
+			waterStorage = 0;
+		double error = out[2];
 
-	/**
-	 *
-	 * @param S_i: the actual storage 
-	 * @return the double value of the simulated discharge
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 */
-	public double computeQ(double S_i) throws IOException {
-		double Q=e*Math.pow(S_i/s_GroundWaterMax, f);
-		return Q;
-	}
+		// update variables at t^n+1
+		double deep_mm = out[1];
+		double deep = deep_mm * m3s;
 
-
-
-
-	/**
-	 * Store of the results in hashmaps 
-	 *
-	 * @param waterStorage is the water storage
-	 * @param discharge is the discharge
-	 * @param discharge is the discharge in mm
-	 * @throws SchemaException the schema exception
-	 */
-
-	private void storeResult_series(int ID, double waterStorage,double discharge, double discharge_mm)
-			throws SchemaException {
-
-		outHMStorage.put(ID, new double[]{waterStorage});
-		outHMDischarge.put(ID, new double[]{discharge});
-		outHMDischarge_mm.put(ID, new double[]{discharge_mm});
-
+		// update storage
+		CI = waterStorage;
+		outHMStorage.put(ID, new double[] { waterStorage});
+		outHMDischarge.put(ID, new double[] { deep });
+		outHMDischarge_mm.put(ID, new double[] { deep_mm });
+		outHMError.put(ID, new double[] { error });
 
 	}
-
 
 }
